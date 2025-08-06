@@ -4,12 +4,15 @@ import gdown
 import matplotlib.pyplot as plt
 
 # ——————————————————————————————
+# Imposta la pagina in modalità “wide”
+st.set_page_config(layout="wide")
+# ——————————————————————————————
+
 # === CONFIGURAZIONE ===
 FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
 
-# Nomi esatti delle colonne nel tuo Excel
 col_bx = "Attributed Frequency TX (MHz)"   # frequenza in MHz
 col_ao = "Channel Bandwidth (kHz)"          # ampiezza in kHz
 col_aq = "Transmission Power (W)"           # potenza in W
@@ -23,7 +26,7 @@ def load_data():
 
 df = load_data()
 
-# Controllo presenza colonne
+# Verifica colonne
 missing = {col_bx, col_ao, col_aq} - set(df.columns)
 if missing:
     st.error(f"Mancano queste colonne nel foglio '{SHEET}': {missing}")
@@ -38,12 +41,11 @@ df = df.dropna(subset=["BX_MHz","AO_MHz","AQ_W"])
 if df.empty:
     st.error("Nessun dato valido dopo la conversione in numerico.")
 else:
-    # Limiti assi
     max_bx = df["BX_MHz"].max()
     max_aq = df["AQ_W"].max()
 
-    # Costruisci il grafico
     fig, ax = plt.subplots()
+
     for _, row in df.iterrows():
         center = row["BX_MHz"]
         width  = row["AO_MHz"]
@@ -56,4 +58,4 @@ else:
     ax.set_xlabel("Frequenza (MHz)")
     ax.set_ylabel("Potenza (W)")
 
-    st.pyplot(fig)
+    st.pyplot(fig, use_container_width=True)
