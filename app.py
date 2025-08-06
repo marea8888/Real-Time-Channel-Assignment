@@ -64,7 +64,9 @@ else:
     dx = (max_x - min_x) * 0.05
     dy = (max_y - min_y) * 0.05
 
-    fig, ax = plt.subplots(figsize=(16, 9))
+    # Creo figura con proporzione più compatta (più alta di larghezza) per schermi più piccoli
+    fig, ax = plt.subplots(figsize=(12, 7))
+
     for _, row in plot_df.iterrows():
         c = row["center"]
         w = row["width"]
@@ -73,9 +75,10 @@ else:
         ax.add_patch(plt.Rectangle((left, 0), w, h, alpha=0.6))
 
     ax.set_xlim(min_x - dx, max_x + dx)
-    # Fissa base Y a zero se min_y>0, altrimenti includi il minimo
+    # Fissa base Y a zero se min_y>=0, altrimenti includi il minimo
     ax.set_ylim((0 if min_y >= 0 else min_y - dy), max_y + dy)
     ax.set_xlabel("Frequenza (MHz)")
     ax.set_ylabel("Potenza (W)")
     
+    # Mostra il grafico adattandosi alla larghezza disponibile
     st.pyplot(fig, use_container_width=True)
