@@ -21,8 +21,6 @@ def load_data():
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
-st.title("Grafico Frequenze con Rettangoli")
-
 df = load_data()
 
 # Controllo presenza colonne
@@ -57,6 +55,5 @@ else:
     ax.set_ylim(0, max_aq * 1.1)
     ax.set_xlabel("Frequenza (MHz)")
     ax.set_ylabel("Potenza (W)")
-    ax.set_title("Allocazioni: centro=BX, base=AO, altezza=AQ")
 
     st.pyplot(fig)
