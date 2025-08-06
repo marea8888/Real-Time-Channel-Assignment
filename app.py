@@ -12,29 +12,28 @@ st.set_page_config(
 )
 
 # Personalizzazione CSS dark e stile sidebar
-css = '''<style>
+dark_css = '''<style>
 /* Sfondo pagina */
 .reportview-container, .main, header, footer { background-color: #111111; color: #EEEEEE; }
 /* Sidebar */
 .stSidebar { background-color: #1f1f1f; }
 /* Sidebar testi */
-.stSidebar label, .stSidebar div, .stSidebar h2, .stSidebar h3 {
+.stSidebar label, .stSidebar div, .stSidebar h2, .stSidebar h3 { color: #FFFFFF; }
+/* Selectbox placeholder (selected) */
+div[data-baseweb="select"] span {
     color: #FFFFFF;
 }
-/* Selectbox testo attivo */
-.css-1emrehy .css-1hwfws3, .css-1emrehy .css-1hwfws3 span {
-    color: #FFFFFF;
-}
-/* Dropdown options testo nero */
-.css-1n76uvr-option {
-    color: #000000 !important;
+/* Dropdown options */
+div[role="option"] {
     background-color: #FFFFFF !important;
+    color: #000000 !important;
 }
-.css-1n76uvr-option--is-focused {
+/* Focused option */
+div[role="option"][aria-selected="true"], div[role="option"]:hover {
     background-color: #ddd !important;
 }
 </style>'''
-st.markdown(css, unsafe_allow_html=True)
+st.markdown(dark_css, unsafe_allow_html=True)
 
 # Configurazione
 FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
