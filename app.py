@@ -38,7 +38,7 @@ with st.sidebar:
     venues = df[col_venue].dropna().unique().tolist()
     venues.sort()
     selection = st.selectbox("Choose Venue:", ["All"] + venues)
-
+    
 # Filtra dati
 df = df if selection == "All" else df[df[col_venue] == selection]
 
