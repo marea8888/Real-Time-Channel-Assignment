@@ -14,15 +14,16 @@ st.set_page_config(
 # ——————————————————————————————
 
 # === CONFIGURAZIONE ===
-FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
-OUTPUT_FILE = "frequenze.xlsx"
-SHEET       = "ALL NP"
+FILE_ID      = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
+OUTPUT_FILE  = "frequenze.xlsx"
+SHEET        = "ALL NP"
 
 col_bx       = "Attributed Frequency TX (MHz)"
 col_ao       = "Channel Bandwidth (kHz)"
 col_aq       = "Transmission Power (W)"
 col_venue    = "Venue Code"
 col_stake    = "Stakeholder ID"
+col_request  = "Request ID"    # ID richiesta
 # ——————————————————————————————
 
 @st.cache_data(ttl=60)
@@ -51,18 +52,19 @@ with st.sidebar:
 filtered = df_venue if stake_sel == "All" else df_venue[df_venue[col_stake] == stake_sel]
 
 # Verifica colonne
-required = {col_bx, col_ao, col_aq}
+required = {col_bx, col_ao, col_aq, col_request}
 missing = required - set(filtered.columns)
 if missing:
     st.error(f"Mancano colonne: {missing}")
     st.stop()
 
 # Prepara dati numeric
-clean = filtered.dropna(subset=[col_bx, col_ao, col_aq]).copy()
-clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
-clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
-clean['height_w'] = pd.to_numeric(clean[col_aq], errors='coerce')
-plot_df = clean.dropna(subset=['center', 'width_mhz', 'height_w'])
+df_clean = filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
+df_clean['center'] = pd.to_numeric(df_clean[col_bx], errors='coerce')
+df_clean['width_mhz'] = pd.to_numeric(df_clean[col_ao], errors='coerce') / 1000.0
+df_clean['height_w'] = pd.to_numeric(df_clean[col_aq], errors='coerce')
+df_clean['req_id'] = df_clean[col_request].astype(str)
+plot_df = df_clean.dropna(subset=['center', 'width_mhz', 'height_w', 'req_id'])
 
 if plot_df.empty:
     st.error("Nessun dato valido per il plotting.")
@@ -79,7 +81,7 @@ else:
     stakes = plot_df[col_stake].astype(str).unique().tolist()
     colors = px.colors.qualitative.Plotly
 
-    # Figura
+    # Crea figura
     fig = go.Figure()
     for idx, stake in enumerate(stakes):
         grp = plot_df[plot_df[col_stake].astype(str) == stake]
@@ -91,22 +93,23 @@ else:
             marker_color=colors[idx % len(colors)],
             opacity=0.7,
             marker_line_color='white',
-            marker_line_width=1
+            marker_line_width=1,
+            customdata=grp['req_id'],
+            hovertemplate=(
+                'Request ID: %{customdata}<br>' +
+                'Freq (MHz): %{x}<br>' +
+                'Power (W): %{y}<extra></extra>'
+            )
         ))
 
-    # Layout\    
+    # Layout aggiornato
     fig.update_layout(
         barmode='overlay',
-        xaxis=dict(range=[min_x - dx, max_x + dx],
-                   title=dict(text='Frequenza (MHz)', font=dict(size=20)),
-                   tickfont=dict(size=16)),
-        yaxis=dict(range=[0, max_y + dy],
-                   title=dict(text='Potenza (W)', font=dict(size=20)),
-                   tickfont=dict(size=16)),
+        xaxis=dict(range=[min_x - dx, max_x + dx], title=dict(text='Frequenza (MHz)', font=dict(size=20)), tickfont=dict(size=16)),
+        yaxis=dict(range=[0, max_y + dy], title=dict(text='Potenza (W)', font=dict(size=20)), tickfont=dict(size=16)),
         legend=dict(font=dict(color='white')),
         plot_bgcolor='#111111', paper_bgcolor='#111111', font_color='#EEEEEE',
-        margin=dict(l=50, r=50, t=20, b=50),
-        dragmode='zoom'
+        margin=dict(l=50, r=50, t=20, b=50), dragmode='zoom'
     )
 
     st.plotly_chart(fig, use_container_width=True)
