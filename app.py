@@ -10,11 +10,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-plt_css = '''<style>
+# Personalizzazione CSS dark
+css = '''<style>
 .reportview-container, .main, header, footer { background-color: #111111; color: #EEEEEE; }
 .stSidebar { background-color: #1f1f1f; }
 </style>'''
-st.markdown(plt_css, unsafe_allow_html=True)
+st.markdown(css, unsafe_allow_html=True)
 
 # Configurazione
 FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
@@ -27,7 +28,7 @@ col_aq      = "Transmission Power (W)"
 col_venue   = "Venue Code"
 col_stake   = "Stakeholder ID"
 col_request = "Request ID"
-col_period  = "License Period"  # Olympic or Paralympic
+col_period  = "License Period"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -40,32 +41,38 @@ df = load_data()
 
 # Sidebar selezioni
 with st.sidebar:
-    st.header(":satellite: Seleziona Venue & Filtri")
-    venues = sorted(df[col_venue].dropna().unique())
-    venue_sel = st.selectbox("Venue:", ["All"] + venues)
-    df_venue = df if venue_sel == 'All' else df[df[col_venue] == venue_sel]
+    st.header(":calendar: Seleziona Periodo")
+    periods = sorted(df[col_period].dropna().unique().tolist())
+    period_sel = st.selectbox("License Period:", ["All"] + periods)
     st.markdown("---")
-    stakeholders = sorted(df_venue[col_stake].dropna().unique())
-    stake_sel = st.selectbox(":busts_in_silhouette: Stakeholder:", ["All"] + stakeholders)
+    st.header(":satellite: Seleziona Venue")
+    df_period = df if period_sel == 'All' else df[df[col_period] == period_sel]
+    venues = sorted(df_period[col_venue].dropna().unique().tolist())
+    venue_sel = st.selectbox("Venue:", ["All"] + venues)
+    st.markdown("---")
+    st.header(":busts_in_silhouette: Seleziona Stakeholder")
+    df_venue = df_period if venue_sel == 'All' else df_period[df_period[col_venue] == venue_sel]
+    stakeholders = sorted(df_venue[col_stake].dropna().unique().tolist())
+    stake_sel = st.selectbox("Stakeholder:", ["All"] + stakeholders)
 
-# Filtro base
-df_base = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
+# Filtro dati
+df_filtered = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
 
 # Verifica colonne
 required = {col_bx, col_ao, col_aq, col_request, col_period}
-missing = required - set(df_base.columns)
+missing = required - set(df_filtered.columns)
 if missing:
     st.error(f"Mancano colonne: {missing}")
     st.stop()
 
-# Drop Na e conversione
-df_clean = df_base.dropna(subset=[col_bx, col_ao, col_aq, col_request, col_period]).copy()
+# Prepara dati
+df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
 df_clean['center'] = pd.to_numeric(df_clean[col_bx], errors='coerce')
-df_clean['width_mhz'] = pd.to_numeric(df_clean[col_ao], errors='coerce')/1000.0
+df_clean['width_mhz'] = pd.to_numeric(df_clean[col_ao], errors='coerce') / 1000.0
 df_clean['height_w'] = pd.to_numeric(df_clean[col_aq], errors='coerce')
 df_clean['req_id'] = df_clean[col_request].astype(str)
 
-# Funzione creazione plot
+# Funzione plot
 colors = px.colors.qualitative.Plotly
 def make_fig(data):
     left = data['center'] - data['width_mhz']/2
@@ -76,36 +83,25 @@ def make_fig(data):
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
     for i, stkh in enumerate(stakes):
-        grp = data[data[col_stake]==stkh]
+        grp = data[data[col_stake] == stkh]
         fig.add_trace(go.Bar(
             x=grp['center'], y=grp['height_w'], width=grp['width_mhz'], name=stkh,
-            marker_color=colors[i%len(colors)], opacity=0.7, marker_line_color='white', marker_line_width=1,
+            marker_color=colors[i % len(colors)], opacity=0.7, marker_line_color='white', marker_line_width=1,
             customdata=grp['req_id'], hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
         ))
     fig.update_layout(
         barmode='overlay', dragmode='zoom',
-        xaxis=dict(range=[min_x-dx, max_x+dx], title='Frequenza (MHz)', title_font=dict(size=18), tickfont=dict(size=14)),
-        yaxis=dict(range=[0, max_y+dy], title='Potenza (W)', title_font=dict(size=18), tickfont=dict(size=14)),
+        xaxis=dict(range=[min_x-dx, max_x+dx], title=dict(text='Frequenza (MHz)', font=dict(size=20)), tickfont=dict(size=16)),
+        yaxis=dict(range=[0, max_y+dy], title=dict(text='Potenza (W)', font=dict(size=20)), tickfont=dict(size=16)),
         legend=dict(font=dict(color='white')), plot_bgcolor='#111111', paper_bgcolor='#111111', font_color='#EEEEEE',
-        margin=dict(l=40,r=40,t=10,b=40)
+        margin=dict(l=40, r=40, t=20, b=40)
     )
     return fig
 
-# Split per periodo
-df_olymp = df_clean[df_clean[col_period]=='Olympic']
-df_para  = df_clean[df_clean[col_period]=='Paralympic']
-
-# Display
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader('Spettro Olimpico')
-    if not df_olymp.empty:
-        st.plotly_chart(make_fig(df_olymp), use_container_width=True)
-    else:
-        st.info('Nessun dato Olympic')
-with col2:
-    st.subheader('Spettro Paralimpico')
-    if not df_para.empty:
-        st.plotly_chart(make_fig(df_para), use_container_width=True)
-    else:
-        st.info('Nessun dato Paralympic')
+# Visualizza grafico
+st.title("Allocazioni Frequenze")
+if df_clean.empty:
+    st.info("Nessun dato disponibile per la selezione.")
+else:
+    fig = make_fig(df_clean)
+    st.plotly_chart(fig, use_container_width=True)
