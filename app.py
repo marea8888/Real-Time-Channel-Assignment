@@ -31,11 +31,10 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Carica dati
-_df = load_data().copy()
-
+_df = load_data()
 df = _df.copy()
 
-# Sidebar di selezione
+# Sidebar selezione
 with st.sidebar:
     st.header("Seleziona Periodo")
     periods = ["Olympic", "Paralympic"]
@@ -56,21 +55,21 @@ with st.sidebar:
     if stake_sel != "All":
         df = df[df[col_stake] == stake_sel]
 
-# Verifica colonne essenziali
+# Verifica colonne
 required = {col_bx, col_ao, col_aq, col_request}
 missing = required - set(df.columns)
 if missing:
     st.error(f"Colonne mancanti: {missing}")
     st.stop()
 
-# Prepara dati numerici
+# Prepara dati
 clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
 clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
 clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['height_w'] = pd.to_numeric(clean[col_aq], errors='coerce')
 clean['req_id'] = clean[col_request].astype(str)
 
-# Funzione per generare il grafico dark con Plotly
+# Funzione per generare il grafico dark
 def make_fig(data):
     if data.empty:
         return None
@@ -78,40 +77,37 @@ def make_fig(data):
     right = data['center'] + data['width_mhz'] / 2
     min_x, max_x = left.min(), right.max()
     max_y = data['height_w'].max()
-    dx = (max_x - min_x) * 0.05 if max_x > min_x else 1
-    dy = max_y * 0.05 if max_y > 0 else 1
-
-    x_range = (max_x + dx) - (min_x - dx)
-    y_range = max_y + dy
+    dx = max((max_x - min_x) * 0.05, 1)
+    dy = max(max_y * 0.05, 1)
 
     fig = go.Figure()
-    stakes = data[col_stake].astype(str).unique()
     palette = px.colors.qualitative.Dark24
-    for i, stkh in enumerate(stakes):
-        grp = data[data[col_stake] == stkh]
-        fig.add_trace(
-            go.Bar(
-                x=grp['center'],
-                y=grp['height_w'],
-                width=grp['width_mhz'],
-                name=stkh,
-                marker_color=palette[i % len(palette)],
-                opacity=0.8,
-                marker_line_color='white',
-                marker_line_width=1,
-                customdata=list(zip(grp['req_id'], grp[col_ao])),
-                hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'
+    for i, stake in enumerate(data[col_stake].astype(str).unique()):
+        grp = data[data[col_stake] == stake]
+        fig.add_trace(go.Bar(
+            x=grp['center'],
+            y=grp['height_w'],
+            width=grp['width_mhz'],
+            name=stake,
+            marker_color=palette[i % len(palette)],
+            opacity=0.8,
+            marker_line_color='white',
+            marker_line_width=1,
+            customdata=list(zip(grp['req_id'], grp[col_ao])),
+            hovertemplate=(
+                'Request ID: %{customdata[0]}<br>'
+                'Freq: %{x} MHz<br>'
+                'Power: %{y} W<br>'
+                'Bandwidth: %{customdata[1]} kHz<extra></extra>'
             )
-        )
-
-    # Layout completamente dark con ticks auto
+        ))
     fig.update_layout(
         template='plotly_dark',
         barmode='overlay',
         dragmode='zoom',
         plot_bgcolor='#111111',
         paper_bgcolor='#111111',
-        font_color='#FFFFFF',  # default font color white
+        font_color='#FFFFFF',
         xaxis=dict(
             range=[min_x - dx, max_x + dx],
             title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18, color='#FFFFFF')),
@@ -128,20 +124,6 @@ def make_fig(data):
         ),
         legend=dict(font=dict(color='#FFFFFF')),
         margin=dict(l=50, r=50, t=20, b=50)
-    )</b>', font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='auto'
-        ),
-        yaxis=dict(
-            range=[0, max_y + dy],
-            title=dict(text='<b>Potenza (W)</b>', font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='auto'
-        ),
-        legend=dict(font=dict(color='#FFFFFF')),
-        margin=dict(l=50, r=50, t=20, b=50)
     )
     return fig
 
@@ -153,5 +135,4 @@ def main():
     else:
         st.plotly_chart(fig, use_container_width=True)
 
-# Esegui
 main()
