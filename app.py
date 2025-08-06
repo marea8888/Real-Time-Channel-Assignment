@@ -30,42 +30,44 @@ def load_data():
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
-# Carica dati
-_df = load_data()
-
-df = _df.copy()
+# Carica dati originali
+df = load_data()
 
 # Sidebar di selezione
 with st.sidebar:
     st.header("Seleziona Periodo")
-    periods = sorted(df[col_period].dropna().unique().tolist())
-    default_idx = periods.index("Olympic") if "Olympic" in periods else 0
+    # Definisco periodi fissi
+    periods = ["Olympic", "Paralympic"]
+    default_idx = 0  # Olympic di default
     period_sel = st.selectbox("License Period", periods, index=default_idx)
 
     st.markdown("---")
     st.header("Seleziona Venue")
-    df = df[df[col_period] == period_sel]
-    venues = sorted(df[col_venue].dropna().unique().tolist())
+    df_period = df[df[col_period] == period_sel]
+    venues = sorted(df_period[col_venue].fillna("Unknown").unique().tolist())
     venue_sel = st.selectbox("Venue", ["All"] + venues)
     if venue_sel != "All":
-        df = df[df[col_venue] == venue_sel]
+        df_period = df_period[df_period[col_venue] == venue_sel]
 
     st.markdown("---")
     st.header("Seleziona Stakeholder")
-    stakeholders = sorted(df[col_stake].dropna().unique().tolist())
+    stakeholders = sorted(df_period[col_stake].fillna("Unknown").unique().tolist())
     stake_sel = st.selectbox("Stakeholder", ["All"] + stakeholders)
     if stake_sel != "All":
-        df = df[df[col_stake] == stake_sel]
+        df_period = df_period[df_period[col_stake] == stake_sel]
+
+# Preparo DataFrame filtrato
+filtered = df_period.copy()
 
 # Verifica colonne essenziali
 required = {col_bx, col_ao, col_aq, col_request}
-missing = required - set(df.columns)
+missing = required - set(filtered.columns)
 if missing:
     st.error(f"Colonne mancanti: {missing}")
     st.stop()
 
 # Prepara dati numerici
-clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
+clean = filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
 clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
 clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['height_w'] = pd.to_numeric(clean[col_aq], errors='coerce')
@@ -75,9 +77,12 @@ clean['req_id'] = clean[col_request].astype(str)
 def make_fig(data):
     left = data['center'] - data['width_mhz'] / 2
     right = data['center'] + data['width_mhz'] / 2
+    if left.empty or right.empty:
+        return None
     min_x, max_x = left.min(), right.max()
     max_y = data['height_w'].max()
-    dx, dy = (max_x - min_x) * 0.05, max_y * 0.05
+    dx, dy = (max_x - min_x) * 0.05 if max_x > min_x else (1,1)
+    dy = max_y * 0.05 if max_y > 0 else 1
 
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
@@ -127,10 +132,10 @@ def make_fig(data):
 
 # Visualizza grafico
 def main():
-    if clean.empty:
-        st.info("Nessun dato disponibile per la selezione.")
+    fig = make_fig(clean)
+    if fig is None or clean.empty:
+        st.info(f"Nessun dato disponibile per il periodo {period_sel}.")
     else:
-        fig = make_fig(clean)
         st.plotly_chart(fig, use_container_width=True)
 
 main()
