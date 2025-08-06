@@ -31,8 +31,7 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Carica dati originali
-_df = load_data()
-df = _df.copy()
+df = load_data().copy()
 
 # Sidebar di selezione
 with st.sidebar:
@@ -80,8 +79,9 @@ def make_fig(data):
     dx = (max_x - min_x) * 0.05 if max_x > min_x else 1
     dy = max_y * 0.05 if max_y > 0 else 1
 
-    x_range = max_x + dx - (min_x - dx)
-    y_range = max_y + dy
+    # Calcola range per tick distribuzione
+    x_range = (max_x + dx) - (min_x - dx)
+    y_range = (max_y + dy) - 0
 
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
@@ -101,6 +101,7 @@ def make_fig(data):
             hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
         ))
 
+    # Layout completamente dark con ticks auto
     fig.update_layout(
         template='plotly_dark',
         barmode='overlay',
@@ -110,37 +111,17 @@ def make_fig(data):
         font_color='#EEEEEE',
         xaxis=dict(
             range=[min_x - dx, max_x + dx],
-            title=dict(text="<b>Frequenza (MHz)</b>", font=dict(size=18)),
+            title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18)),
             tickfont=dict(size=14),
             gridcolor='gray',
             tickmode='auto'
-        ),
-        yaxis=dict(
-            range=[0, max_y + dy],
-            title=dict(text="<b>Potenza (W)</b>", font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='auto'
-        ),
-        legend=dict(font=dict(color='#FFFFFF')),
-        margin=dict(l=50, r=50, t=20, b=50)
-    )</b>', font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='auto'
-        )</b>', font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='linear',
-            dtick=x_range / 10
         ),
         yaxis=dict(
             range=[0, max_y + dy],
             title=dict(text='<b>Potenza (W)</b>', font=dict(size=18)),
             tickfont=dict(size=14),
             gridcolor='gray',
-            tickmode='linear',
-            dtick=y_range / 10
+            tickmode='auto'
         ),
         legend=dict(font=dict(color='#FFFFFF')),
         margin=dict(l=50, r=50, t=20, b=50)
