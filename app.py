@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 # ——————————————————————————————
 # Imposta la pagina in modalità “wide”
 st.set_page_config(layout="wide")
+# Applica tema dark a Matplotlib
+plt.style.use('dark_background')
 # ——————————————————————————————
 
 # === CONFIGURAZIONE ===
@@ -13,10 +15,10 @@ FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
 
-col_bx = "Attributed Frequency TX (MHz)"   # frequenza in MHz
-col_ao = "Channel Bandwidth (kHz)"          # ampiezza in kHz
-col_aq = "Transmission Power (W)"           # potenza in W
-col_venue = "Venue Code"                    # codice venue
+col_bx    = "Attributed Frequency TX (MHz)"   # frequenza in MHz
+col_ao    = "Channel Bandwidth (kHz)"         # ampiezza in kHz
+col_aq    = "Transmission Power (W)"          # potenza in W
+col_venue = "Venue Code"                       # codice venue
 # ——————————————————————————————
 
 @st.cache_data(ttl=60)
@@ -44,41 +46,45 @@ if missing:
     st.stop()
 
 # Conversioni
-freq = pd.to_numeric(df[col_bx], errors="coerce")
-width = pd.to_numeric(df[col_ao], errors="coerce") / 1000.0
-height = pd.to_numeric(df[col_aq], errors="coerce")
-plot_df = pd.DataFrame({"center": freq, "width": width, "height": height}).dropna()
+df['BX_MHz'] = pd.to_numeric(df[col_bx], errors="coerce")
+df['AO_MHz'] = pd.to_numeric(df[col_ao], errors="coerce") / 1000.0
+df['AQ_W']  = pd.to_numeric(df[col_aq], errors="coerce")
+plot_df      = df.dropna(subset=['BX_MHz','AO_MHz','AQ_W'])
 
 if plot_df.empty:
     st.error("Nessun dato valido per il plotting dopo le conversioni.")
 else:
     # Calcola margini dinamici
-    left_edges = plot_df["center"] - plot_df["width"] / 2
-    right_edges = plot_df["center"] + plot_df["width"] / 2
+    left_edges  = plot_df['BX_MHz'] - plot_df['AO_MHz'] / 2
+    right_edges = plot_df['BX_MHz'] + plot_df['AO_MHz'] / 2
     min_x = left_edges.min()
     max_x = right_edges.max()
-    min_y = plot_df["height"].min()
-    max_y = plot_df["height"].max()
+    min_y = plot_df['AQ_W'].min()
+    max_y = plot_df['AQ_W'].max()
 
-    # Aggiungi un piccolo margine del 5%
     dx = (max_x - min_x) * 0.05
     dy = (max_y - min_y) * 0.05
 
-    # Creo figura con proporzione più compatta (più alta di larghezza) per schermi più piccoli
-    fig, ax = plt.subplots(figsize=(12, 7))
+    # Figura compatta e dark
+    fig, ax = plt.subplots(figsize=(10, 6))
+    fig.patch.set_facecolor('#2a2a2a')
+    ax.set_facecolor('#2a2a2a')
 
     for _, row in plot_df.iterrows():
-        c = row["center"]
-        w = row["width"]
-        h = row["height"]
+        c = row['BX_MHz']
+        w = row['AO_MHz']
+        h = row['AQ_W']
         left = c - w / 2
-        ax.add_patch(plt.Rectangle((left, 0), w, h, alpha=0.6))
+        ax.add_patch(plt.Rectangle((left, 0), w, h, alpha=0.7, edgecolor='#ffffff'))
 
     ax.set_xlim(min_x - dx, max_x + dx)
-    # Fissa base Y a zero se min_y>=0, altrimenti includi il minimo
-    ax.set_ylim((0 if min_y >= 0 else min_y - dy), max_y + dy)
-    ax.set_xlabel("Frequenza (MHz)")
-    ax.set_ylabel("Potenza (W)")
-    
-    # Mostra il grafico adattandosi alla larghezza disponibile
+    ax.set_ylim(0 if min_y >= 0 else min_y - dy, max_y + dy)
+
+    # Styling assi
+    ax.set_xlabel("Frequenza (MHz)", color='white')
+    ax.set_ylabel("Potenza (W)", color='white')
+    ax.tick_params(colors='white')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+
     st.pyplot(fig, use_container_width=True)
