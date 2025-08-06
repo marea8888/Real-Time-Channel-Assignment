@@ -43,10 +43,12 @@ df = load_data()
 with st.sidebar:
     st.header(":calendar: Seleziona Periodo")
     periods = sorted(df[col_period].dropna().unique().tolist())
-    period_sel = st.selectbox("License Period:", ["All"] + periods)
+    # Default al periodo Olympic
+    default_idx = periods.index("Olympic") if "Olympic" in periods else 0
+    period_sel = st.selectbox("License Period:", periods, index=default_idx)
     st.markdown("---")
     st.header(":satellite: Seleziona Venue")
-    df_period = df if period_sel == 'All' else df[df[col_period] == period_sel]
+    df_period = df[df[col_period] == period_sel]
     venues = sorted(df_period[col_venue].dropna().unique().tolist())
     venue_sel = st.selectbox("Venue:", ["All"] + venues)
     st.markdown("---")
@@ -56,6 +58,9 @@ with st.sidebar:
     stake_sel = st.selectbox("Stakeholder:", ["All"] + stakeholders)
 
 # Filtro dati
+filtered = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
+
+# Verifica colonne
 df_filtered = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
 
 # Verifica colonne
