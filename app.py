@@ -1,10 +1,19 @@
 import streamlit as st
 import pandas as pd
 import gdown
+import matplotlib.pyplot as plt
 
+# ——————————————————————————————
+# === CONFIGURAZIONE ===
 FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
+
+# Nomi esatti delle colonne nel tuo Excel
+col_bx = "Attributed Frequency TX (MHz)"   # frequenza in MHz
+col_ao = "Channel Bandwidth (kHz)"          # ampiezza in kHz
+col_aq = "Transmission Power (W)"           # potenza in W
+# ——————————————————————————————
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -38,13 +47,16 @@ else:
     # Costruisci il grafico
     fig, ax = plt.subplots()
     for _, row in df.iterrows():
-        c = row["BX_MHz"]
-        w = row["AO_MHz"]
-        h = row["AQ_W"]
-        ax.add_patch(plt.Rectangle((c - w/2, 0), w, h, alpha=0.6))
+        center = row["BX_MHz"]
+        width  = row["AO_MHz"]
+        height = row["AQ_W"]
+        left   = center - width / 2
+        ax.add_patch(plt.Rectangle((left, 0), width, height, alpha=0.6))
 
     ax.set_xlim(0, max_bx * 1.05)
     ax.set_ylim(0, max_aq * 1.1)
     ax.set_xlabel("Frequenza (MHz)")
     ax.set_ylabel("Potenza (W)")
-    ax.set_title("Allocazioni: BX (centro), AO (base), AQ (altezza)")
+    ax.set_title("Allocazioni: centro=BX, base=AO, altezza=AQ")
+
+    st.pyplot(fig)
