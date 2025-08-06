@@ -31,7 +31,9 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Carica dati
-df = load_data()
+_df = load_data()
+
+df = _df.copy()
 
 # Sidebar di selezione
 with st.sidebar:
@@ -42,32 +44,32 @@ with st.sidebar:
 
     st.markdown("---")
     st.header("Seleziona Venue")
-    df_period = df[df[col_period] == period_sel]
-    venues = sorted(df_period[col_venue].dropna().unique().tolist())
+    df = df[df[col_period] == period_sel]
+    venues = sorted(df[col_venue].dropna().unique().tolist())
     venue_sel = st.selectbox("Venue", ["All"] + venues)
+    if venue_sel != "All":
+        df = df[df[col_venue] == venue_sel]
 
     st.markdown("---")
     st.header("Seleziona Stakeholder")
-    df_venue = df_period if venue_sel == 'All' else df_period[df_period[col_venue] == venue_sel]
-    stakeholders = sorted(df_venue[col_stake].dropna().unique().tolist())
+    stakeholders = sorted(df[col_stake].dropna().unique().tolist())
     stake_sel = st.selectbox("Stakeholder", ["All"] + stakeholders)
-
-# Filtro dati in base alle selezioni
-df_filtered = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
+    if stake_sel != "All":
+        df = df[df[col_stake] == stake_sel]
 
 # Verifica colonne essenziali
 required = {col_bx, col_ao, col_aq, col_request}
-missing = required - set(df_filtered.columns)
+missing = required - set(df.columns)
 if missing:
     st.error(f"Colonne mancanti: {missing}")
     st.stop()
 
 # Prepara dati numerici
-df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
-df_clean['center'] = pd.to_numeric(df_clean[col_bx], errors='coerce')
-df_clean['width_mhz'] = pd.to_numeric(df_clean[col_ao], errors='coerce') / 1000.0
-df_clean['height_w'] = pd.to_numeric(df_clean[col_aq], errors='coerce')
-df_clean['req_id'] = df_clean[col_request].astype(str)
+clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
+clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
+clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
+clean['height_w'] = pd.to_numeric(clean[col_aq], errors='coerce')
+clean['req_id'] = clean[col_request].astype(str)
 
 # Funzione per generare il grafico dark con Plotly
 def make_fig(data):
@@ -96,31 +98,39 @@ def make_fig(data):
             hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
         ))
 
-    # Layout dark specifico solo al grafico
+    # Layout completamente dark
     fig.update_layout(
         template='plotly_dark',
         barmode='overlay',
         dragmode='zoom',
+        plot_bgcolor='#111111',
+        paper_bgcolor='#111111',
+        font_color='#EEEEEE',
         xaxis=dict(
             range=[min_x - dx, max_x + dx],
             title='Frequenza (MHz)',
             title_font=dict(size=18),
-            tickfont=dict(size=14)
+            tickfont=dict(size=14),
+            gridcolor='gray'
         ),
         yaxis=dict(
             range=[0, max_y + dy],
             title='Potenza (W)',
             title_font=dict(size=18),
-            tickfont=dict(size=14)
+            tickfont=dict(size=14),
+            gridcolor='gray'
         ),
-        legend=dict(font=dict(color='#FFFFFF')),
+        legend=dict(font=dict(color='#FFFFFF')), 
         margin=dict(l=50, r=50, t=20, b=50)
     )
     return fig
 
 # Visualizza grafico
-if df_clean.empty:
-    st.info("Nessun dato disponibile per la selezione.")
-else:
-    fig = make_fig(df_clean)
-    st.plotly_chart(fig, use_container_width=True)
+def main():
+    if clean.empty:
+        st.info("Nessun dato disponibile per la selezione.")
+    else:
+        fig = make_fig(clean)
+        st.plotly_chart(fig, use_container_width=True)
+
+main()
