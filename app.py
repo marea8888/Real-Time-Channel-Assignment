@@ -109,6 +109,24 @@ def make_fig(data):
             title='<b>Frequenza (MHz)</b>',
             title_font=dict(size=18),
             tickfont=dict(size=14),
+            gridcolor='gray',
+            tickmode='linear',
+            dtick=( (max_x + dx) - (min_x - dx) ) / 10
+        ),
+        yaxis=dict(
+            range=[0, max_y + dy],
+            title='<b>Potenza (W)</b>',
+            title_font=dict(size=18),
+            tickfont=dict(size=14),
+            gridcolor='gray',
+            tickmode='linear',
+            dtick=(max_y + dy) / 10
+        ),
+        legend=dict(font=dict(color='#FFFFFF')),
+        margin=dict(l=50, r=50, t=20, b=50)
+    )</b>',
+            title_font=dict(size=18),
+            tickfont=dict(size=14),
             gridcolor='gray'
         ),
         yaxis=dict(
