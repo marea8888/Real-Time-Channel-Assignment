@@ -44,20 +44,25 @@ if missing:
     st.stop()
 
 # Conversioni
-# Frequenza centrale in MHz
 freq = pd.to_numeric(df[col_bx], errors="coerce")
-# Ampiezza in MHz (AO in kHz)
 width = pd.to_numeric(df[col_ao], errors="coerce") / 1000.0
-# Potenza in W
 height = pd.to_numeric(df[col_aq], errors="coerce")
-
 plot_df = pd.DataFrame({"center": freq, "width": width, "height": height}).dropna()
 
 if plot_df.empty:
     st.error("Nessun dato valido per il plotting dopo le conversioni.")
 else:
-    max_bx = plot_df["center"].max()
-    max_aq = plot_df["height"].max()
+    # Calcola margini dinamici
+    left_edges = plot_df["center"] - plot_df["width"] / 2
+    right_edges = plot_df["center"] + plot_df["width"] / 2
+    min_x = left_edges.min()
+    max_x = right_edges.max()
+    min_y = plot_df["height"].min()
+    max_y = plot_df["height"].max()
+
+    # Aggiungi un piccolo margine del 5%
+    dx = (max_x - min_x) * 0.05
+    dy = (max_y - min_y) * 0.05
 
     fig, ax = plt.subplots(figsize=(16, 9))
     for _, row in plot_df.iterrows():
@@ -67,10 +72,10 @@ else:
         left = c - w / 2
         ax.add_patch(plt.Rectangle((left, 0), w, h, alpha=0.6))
 
-    ax.set_xlim(0, max_bx * 1.05)
-    ax.set_ylim(0, max_aq * 1.1)
+    ax.set_xlim(min_x - dx, max_x + dx)
+    # Fissa base Y a zero se min_y>0, altrimenti includi il minimo
+    ax.set_ylim((0 if min_y >= 0 else min_y - dy), max_y + dy)
     ax.set_xlabel("Frequenza (MHz)")
     ax.set_ylabel("Potenza (W)")
-
-    # Mostra il grafico senza titoli
+    
     st.pyplot(fig, use_container_width=True)
