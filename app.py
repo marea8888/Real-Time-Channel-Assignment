@@ -100,6 +100,12 @@ else:
         xaxis=dict(range=[min_x-dx, max_x+dx], title=dict(text="Frequenza (MHz)", font=dict(size=18)), tickfont=dict(size=14)),
         yaxis=dict(range=[0, max_y+dy], title=dict(text="Potenza (W)", font=dict(size=18)), tickfont=dict(size=14)),
         plot_bgcolor="#111111", paper_bgcolor="#111111", font_color="#EEEEEE",
+        legend=dict(font=dict(color="#FFFFFF")),
+        margin=dict(l=40, r=40, t=20, b=40),
+        dragmode="zoom"
+    )", font=dict(size=18)), tickfont=dict(size=14)),
+        yaxis=dict(range=[0, max_y+dy], title=dict(text="Potenza (W)", font=dict(size=18)), tickfont=dict(size=14)),
+        plot_bgcolor="#111111", paper_bgcolor="#111111", font_color="#EEEEEE",
         margin=dict(l=40, r=40, t=20, b=40), dragmode="zoom"
     )
 
