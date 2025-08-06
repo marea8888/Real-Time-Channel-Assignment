@@ -113,6 +113,10 @@ def make_fig(data):
             title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18)),
             tickfont=dict(size=14),
             gridcolor='gray',
+            tickmode='auto'
+        )</b>', font=dict(size=18)),
+            tickfont=dict(size=14),
+            gridcolor='gray',
             tickmode='linear',
             dtick=x_range / 10
         ),
