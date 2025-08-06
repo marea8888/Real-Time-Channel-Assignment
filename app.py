@@ -98,7 +98,8 @@ def make_fig(data):
             marker_line_color='white',
             marker_line_width=1,
             customdata=grp['req_id'],
-            hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
+            customdata=list(zip(grp['req_id'], grp[col_ao])),
+            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'
         ))
 
     # Layout completamente dark con ticks auto
