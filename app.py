@@ -1,11 +1,8 @@
 import pandas as pd
 import gdown
-import streamlit as st
-
-st.write("✅ La tua app è viva!")
 
 # 1️⃣ Inserisci qui l’ID del tuo file Google Drive
-FILE_ID = "19YgqxihKo98iBvcqpzjcj8DQ3nmJh8BJ"  
+FILE_ID = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"  
 OUTPUT_FILE = "frequenze.xlsx"
 
 # 2️⃣ Costruisci l’URL “downloadabile” e scarica il file
