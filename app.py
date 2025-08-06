@@ -44,7 +44,8 @@ else:
     max_bx = df["BX_MHz"].max()
     max_aq = df["AQ_W"].max()
 
-    fig, ax = plt.subplots()
+    # Creo figura con aspect ratio 16:9 (larghezza x altezza)
+    fig, ax = plt.subplots(figsize=(16, 9))
 
     for _, row in df.iterrows():
         center = row["BX_MHz"]
@@ -58,4 +59,5 @@ else:
     ax.set_xlabel("Frequenza (MHz)")
     ax.set_ylabel("Potenza (W)")
 
+    # Usa tutta la larghezza e scala l'altezza in proporzione
     st.pyplot(fig, use_container_width=True)
