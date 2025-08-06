@@ -30,17 +30,15 @@ def load_data():
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
-# Carica dati originali
-df = load_data()
-
-df = df.copy()
+# Carica dati
+_df = load_data()
+df = _df.copy()
 
 # Sidebar di selezione
 with st.sidebar:
     st.header("Seleziona Periodo")
     periods = ["Olympic", "Paralympic"]
-    default_idx = 0
-    period_sel = st.selectbox("License Period", periods, index=default_idx)
+    period_sel = st.selectbox("License Period", periods, index=0)
 
     st.markdown("---")
     st.header("Seleziona Venue")
@@ -73,23 +71,14 @@ clean['req_id'] = clean[col_request].astype(str)
 
 # Funzione per generare il grafico dark con Plotly
 def make_fig(data):
-    # Calcolo dei bordi
+    if data.empty:
+        return None
     left = data['center'] - data['width_mhz'] / 2
     right = data['center'] + data['width_mhz'] / 2
-    if left.empty or right.empty:
-        return None
-    min_x = left.min()
-    max_x = right.max()
+    min_x, max_x = left.min(), right.max()
     max_y = data['height_w'].max()
-    # Margini dinamici con fallback
-    if max_x > min_x:
-        dx = (max_x - min_x) * 0.05
-    else:
-        dx = 1
-    if max_y > 0:
-        dy = max_y * 0.05
-    else:
-        dy = 1
+    dx = (max_x - min_x) * 0.05 if max_x > min_x else 1
+    dy = max_y * 0.05 if max_y > 0 else 1
 
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
@@ -108,8 +97,6 @@ def make_fig(data):
             customdata=grp['req_id'],
             hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
         ))
-
-    # Layout completamente dark
     fig.update_layout(
         template='plotly_dark',
         barmode='overlay',
@@ -124,16 +111,9 @@ def make_fig(data):
             tickfont=dict(size=14),
             gridcolor='gray'
         ),
-            tickfont=dict(size=14),
-            gridcolor='gray'
-        ),
         yaxis=dict(
             range=[0, max_y + dy],
             title='<b>Potenza (W)</b>',
-            title_font=dict(size=18),
-            tickfont=dict(size=14),
-            gridcolor='gray'
-        )',
             title_font=dict(size=18),
             tickfont=dict(size=14),
             gridcolor='gray'
@@ -146,7 +126,7 @@ def make_fig(data):
 # Visualizza grafico
 def main():
     fig = make_fig(clean)
-    if fig is None or clean.empty:
+    if fig is None:
         st.info(f"Nessun dato disponibile per il periodo {period_sel}.")
     else:
         st.plotly_chart(fig, use_container_width=True)
