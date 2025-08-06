@@ -4,34 +4,14 @@ import gdown
 import plotly.graph_objects as go
 import plotly.express as px
 
-# Configura pagina e tema
+# Configura pagina senza tema dark globale
 st.set_page_config(
     page_title="Realtime Frequency Plot",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Personalizzazione CSS dark e stile sidebar
-dark_css = '''<style>
-/* Sfondo pagina */
-.reportview-container, .main, header, footer { background-color: #111111; color: #EEEEEE; }
-/* Sidebar */
-.stSidebar { background-color: #1f1f1f; }
-/* Sidebar testi */
-.stSidebar label, .stSidebar div, .stSidebar h2, .stSidebar h3 { color: #FFFFFF; }
-/* Selectbox placeholder (selected) */
-div[data-baseweb="select"] span {
-    color: #FFFFFF;
-}
-/* Dropdown options styling removed to use default colors */
-/* Focused option */
-div[role="option"][aria-selected="true"], div[role="option"]:hover {
-    background-color: #ddd !important;
-}
-</style>'''
-st.markdown(dark_css, unsafe_allow_html=True)
-
-# Configurazione
+# Configurazione file e colonne
 FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
@@ -51,73 +31,75 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Carica dati
-df = load_data()
+ df = load_data()
 
-# Sidebar selezioni
+# Sidebar di selezione (tema light di default)
 with st.sidebar:
-    st.header(":calendar: Seleziona Periodo")
+    st.header("Seleziona Periodo")
     periods = sorted(df[col_period].dropna().unique().tolist())
     default_idx = periods.index("Olympic") if "Olympic" in periods else 0
     period_sel = st.selectbox("License Period", periods, index=default_idx)
 
     st.markdown("---")
-    st.header(":satellite: Seleziona Venue")
+    st.header("Seleziona Venue")
     df_period = df[df[col_period] == period_sel]
     venues = sorted(df_period[col_venue].dropna().unique().tolist())
     venue_sel = st.selectbox("Venue", ["All"] + venues)
 
     st.markdown("---")
-    st.header(":busts_in_silhouette: Seleziona Stakeholder")
+    st.header("Seleziona Stakeholder")
     df_venue = df_period if venue_sel == 'All' else df_period[df_period[col_venue] == venue_sel]
     stakeholders = sorted(df_venue[col_stake].dropna().unique().tolist())
     stake_sel = st.selectbox("Stakeholder", ["All"] + stakeholders)
 
-# Filtro dati
-df_filtered = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
+# Filtro dati in base a selezioni
+ df_filtered = df_venue if stake_sel == 'All' else df_venue[df_venue[col_stake] == stake_sel]
 
-# Verifica colonne
-required = {col_bx, col_ao, col_aq, col_request, col_period}
-missing = required - set(df_filtered.columns)
-if missing:
-    st.error(f"Mancano colonne: {missing}")
-    st.stop()
+# Verifica colonne essenziali
+ required = {col_bx, col_ao, col_aq, col_request}
+ missing = required - set(df_filtered.columns)
+ if missing:
+     st.error(f"Colonne mancanti: {missing}")
+     st.stop()
 
-# Prepara dati
-df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
-df_clean['center'] = pd.to_numeric(df_clean[col_bx], errors='coerce')
-df_clean['width_mhz'] = pd.to_numeric(df_clean[col_ao], errors='coerce') / 1000.0
-df_clean['height_w'] = pd.to_numeric(df_clean[col_aq], errors='coerce')
-df_clean['req_id'] = df_clean[col_request].astype(str)
+# Prepara dati numerici
+ df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
+ df_clean['center'] = pd.to_numeric(df_clean[col_bx], errors='coerce')
+ df_clean['width_mhz'] = pd.to_numeric(df_clean[col_ao], errors='coerce') / 1000.0
+ df_clean['height_w'] = pd.to_numeric(df_clean[col_aq], errors='coerce')
+ df_clean['req_id'] = df_clean[col_request].astype(str)
 
-# Funzione plot
+# Funzione per generare il grafico dark con Plotly
 def make_fig(data):
     left = data['center'] - data['width_mhz']/2
     right = data['center'] + data['width_mhz']/2
     min_x, max_x = left.min(), right.max()
     max_y = data['height_w'].max()
     dx, dy = (max_x-min_x)*0.05, max_y*0.05
+
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
-    colors = px.colors.qualitative.Plotly
+    palette = px.colors.qualitative.Dark24
+
     for i, stkh in enumerate(stakes):
         grp = data[data[col_stake] == stkh]
         fig.add_trace(go.Bar(
             x=grp['center'], y=grp['height_w'], width=grp['width_mhz'], name=stkh,
-            marker_color=colors[i % len(colors)], opacity=0.7, marker_line_color='white', marker_line_width=1,
-            customdata=grp['req_id'], hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
+            marker_color=palette[i % len(palette)], opacity=0.8,
+            marker_line_color='white', marker_line_width=1,
+            customdata=grp['req_id'],
+            hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
         ))
+
+    # Layout dark specifico solo al grafico
     fig.update_layout(
+        template='plotly_dark',
         barmode='overlay', dragmode='zoom',
-        xaxis=dict(range=[min_x-dx, max_x+dx], title=dict(text='Frequenza (MHz)', font=dict(size=20)), tickfont=dict(size=16)),
-        yaxis=dict(range=[0, max_y+dy], title=dict(text='Potenza (W)', font=dict(size=20)), tickfont=dict(size=16)),
-        legend=dict(font=dict(color='white')), plot_bgcolor='#111111', paper_bgcolor='#111111', font_color='#EEEEEE',
-        margin=dict(l=40, r=40, t=20, b=40)
+        xaxis=dict(range=[min_x-dx, max_x+dx], title='Frequenza (MHz)', title_font=dict(size=18), tickfont=dict(size=14)),
+        yaxis=dict(range=[0, max_y+dy], title='Potenza (W)', title_font=dict(size=18), tickfont=dict(size=14)),
+        legend=dict(font=dict(color='#FFFFFF')), 
+        margin=dict(l=50, r=50, t=20, b=50),
     )
     return fig
 
-# Visualizza grafico
-if df_clean.empty:
-    st.info("Nessun dato disponibile per la selezione.")
-else:
-    fig = make_fig(df_clean)
-    st.plotly_chart(fig, use_container_width=True)
+# Visualizza g
