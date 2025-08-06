@@ -16,16 +16,22 @@ css = '''<style>
 /* Sfondo pagina */
 .reportview-container, .main, header, footer { background-color: #111111; color: #EEEEEE; }
 /* Sidebar */
-.stSidebar { background-color: #1f1f1f; color: #FFFFFF; }
+.stSidebar { background-color: #1f1f1f; }
+/* Sidebar testi */
 .stSidebar label, .stSidebar div, .stSidebar h2, .stSidebar h3 {
     color: #FFFFFF;
 }
-/* Selectbox testo */
+/* Selectbox testo attivo */
 .css-1emrehy .css-1hwfws3, .css-1emrehy .css-1hwfws3 span {
     color: #FFFFFF;
 }
-.css-1emrehy .css-1hwfws3 svg {
-    color: #FFFFFF;
+/* Dropdown options testo nero */
+.css-1n76uvr-option {
+    color: #000000 !important;
+    background-color: #FFFFFF !important;
+}
+.css-1n76uvr-option--is-focused {
+    background-color: #ddd !important;
 }
 </style>'''
 st.markdown(css, unsafe_allow_html=True)
