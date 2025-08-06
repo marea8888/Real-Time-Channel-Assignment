@@ -49,11 +49,11 @@ if missing:
     st.stop()
 
 # Prepara dati per il plot
- df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq]).copy()
- df_clean["center"] = pd.to_numeric(df_clean[col_bx], errors="coerce")
- df_clean["width_mhz"] = pd.to_numeric(df_clean[col_ao], errors="coerce") / 1000.0
- df_clean["height_w"] = pd.to_numeric(df_clean[col_aq], errors="coerce")
- plot_df = df_clean.dropna(subset=["center", "width_mhz", "height_w"])
+df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq]).copy()
+df_clean["center"] = pd.to_numeric(df_clean[col_bx], errors="coerce")
+df_clean["width_mhz"] = pd.to_numeric(df_clean[col_ao], errors="coerce") / 1000.0
+df_clean["height_w"] = pd.to_numeric(df_clean[col_aq], errors="coerce")
+plot_df = df_clean.dropna(subset=["center", "width_mhz", "height_w"])
 
 if plot_df.empty:
     st.error("Nessun dato valido per il plotting.")
