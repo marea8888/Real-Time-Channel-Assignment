@@ -107,17 +107,14 @@ else:
                               linewidth=1.5)
         ax.add_patch(rect)
 
+    # Adatta assi dinamicamente
     ax.set_xlim(min_x - dx, max_x + dx)
     ax.set_ylim(min_y, max_y + dy)
     ax.set_xlabel("Frequenza (MHz)", color='#cccccc')
     ax.set_ylabel("Potenza (W)", color='#cccccc')
     ax.tick_params(colors='#cccccc')
-    for spine in ax.spines.values(): spine.set_color('#555555')
-
-    # Sovrapponi testo con stile
-    title = "All Venues" if selection == "All" else selection
-    ax.text(0.02, 0.98, f"{title}", color='#ffffff', fontsize=14,
-            transform=ax.transAxes, va='top', ha='left', backgroundcolor='#333333')
+    for spine in ax.spines.values():
+        spine.set_color('#555555')
 
     # Visualizza grafico
     st.pyplot(fig, use_container_width=True)
