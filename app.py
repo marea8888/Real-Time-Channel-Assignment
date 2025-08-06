@@ -23,11 +23,7 @@ dark_css = '''<style>
 div[data-baseweb="select"] span {
     color: #FFFFFF;
 }
-/* Dropdown options */
-div[role="option"] {
-    background-color: #FFFFFF !important;
-    color: #000000 !important;
-}
+/* Dropdown options styling removed to use default colors */
 /* Focused option */
 div[role="option"][aria-selected="true"], div[role="option"]:hover {
     background-color: #ddd !important;
