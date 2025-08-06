@@ -98,42 +98,4 @@ def make_fig(data):
             marker_line_color='white',
             marker_line_width=1,
             customdata=list(zip(grp['req_id'], grp[col_ao])),
-            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'
-        ))
-
-    # Layout completamente dark con ticks auto
-    fig.update_layout(
-        template='plotly_dark',
-        barmode='overlay',
-        dragmode='zoom',
-        plot_bgcolor='#111111',
-        paper_bgcolor='#111111',
-        font_color='#EEEEEE',
-        xaxis=dict(
-            range=[min_x - dx, max_x + dx],
-            title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='auto'
-        ),
-        yaxis=dict(
-            range=[0, max_y + dy],
-            title=dict(text='<b>Potenza (W)</b>', font=dict(size=18)),
-            tickfont=dict(size=14),
-            gridcolor='gray',
-            tickmode='auto'
-        ),
-        legend=dict(font=dict(color='#FFFFFF')),
-        margin=dict(l=50, r=50, t=20, b=50)
-    )
-    return fig
-
-# Visualizza grafico
-def main():
-    fig = make_fig(clean)
-    if fig is None:
-        st.info(f"Nessun dato disponibile per il periodo {period_sel}.")
-    else:
-        st.plotly_chart(fig, use_container_width=True)
-
-main()
+            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'
