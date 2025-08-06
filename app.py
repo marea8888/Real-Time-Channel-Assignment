@@ -31,7 +31,8 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Carica dati originali
-df = load_data().copy()
+_df = load_data()
+df = _df.copy()
 
 # Sidebar di selezione
 with st.sidebar:
@@ -79,6 +80,9 @@ def make_fig(data):
     dx = (max_x - min_x) * 0.05 if max_x > min_x else 1
     dy = max_y * 0.05 if max_y > 0 else 1
 
+    x_range = max_x + dx - (min_x - dx)
+    y_range = max_y + dy
+
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
     palette = px.colors.qualitative.Dark24
@@ -97,36 +101,16 @@ def make_fig(data):
             hovertemplate='Request ID: %{customdata}<br>Freq: %{x} MHz<br>Power: %{y} W<extra></extra>'
         ))
 
-    # Layout completamente dark con dtick dinamico
-    x_range = max_x + dx - (min_x - dx)
-    y_range = max_y + dy
     fig.update_layout(
-        template="plotly_dark",
-        barmode="overlay",
-        dragmode="zoom",
-        plot_bgcolor="#111111",
-        paper_bgcolor="#111111",
-        font_color="#EEEEEE",
+        template='plotly_dark',
+        barmode='overlay',
+        dragmode='zoom',
+        plot_bgcolor='#111111',
+        paper_bgcolor='#111111',
+        font_color='#EEEEEE',
         xaxis=dict(
             range=[min_x - dx, max_x + dx],
-            title=dict(text="<b>Frequenza (MHz)</b>", font_size=18),
-            tickfont_size=14,
-            gridcolor="gray",
-            tickmode="linear",
-            dtick=(max_x + dx - (min_x - dx)) / 10
-        ),
-        yaxis=dict(
-            range=[0, max_y + dy],
-            title=dict(text="<b>Potenza (W)</b>", font_size=18),
-            tickfont_size=14,
-            gridcolor="gray",
-            tickmode="linear",
-            dtick=(max_y + dy) / 10
-        ),
-        legend=dict(font_size=14, font_color="#FFFFFF"),
-        margin=dict(l=50, r=50, t=20, b=50)
-    )</b>',
-            title_font=dict(size=18),
+            title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18)),
             tickfont=dict(size=14),
             gridcolor='gray',
             tickmode='linear',
@@ -134,8 +118,7 @@ def make_fig(data):
         ),
         yaxis=dict(
             range=[0, max_y + dy],
-            title='<b>Potenza (W)</b>',
-            title_font=dict(size=18),
+            title=dict(text='<b>Potenza (W)</b>', font=dict(size=18)),
             tickfont=dict(size=14),
             gridcolor='gray',
             tickmode='linear',
