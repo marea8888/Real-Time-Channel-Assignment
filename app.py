@@ -33,41 +33,39 @@ def load_data():
 # Carica dati originali
 df = load_data()
 
+df = df.copy()
+
 # Sidebar di selezione
 with st.sidebar:
     st.header("Seleziona Periodo")
-    # Definisco periodi fissi
     periods = ["Olympic", "Paralympic"]
-    default_idx = 0  # Olympic di default
+    default_idx = 0
     period_sel = st.selectbox("License Period", periods, index=default_idx)
 
     st.markdown("---")
     st.header("Seleziona Venue")
-    df_period = df[df[col_period] == period_sel]
-    venues = sorted(df_period[col_venue].fillna("Unknown").unique().tolist())
+    df = df[df[col_period] == period_sel]
+    venues = sorted(df[col_venue].dropna().unique().tolist())
     venue_sel = st.selectbox("Venue", ["All"] + venues)
     if venue_sel != "All":
-        df_period = df_period[df_period[col_venue] == venue_sel]
+        df = df[df[col_venue] == venue_sel]
 
     st.markdown("---")
     st.header("Seleziona Stakeholder")
-    stakeholders = sorted(df_period[col_stake].fillna("Unknown").unique().tolist())
+    stakeholders = sorted(df[col_stake].dropna().unique().tolist())
     stake_sel = st.selectbox("Stakeholder", ["All"] + stakeholders)
     if stake_sel != "All":
-        df_period = df_period[df_period[col_stake] == stake_sel]
-
-# Preparo DataFrame filtrato
-filtered = df_period.copy()
+        df = df[df[col_stake] == stake_sel]
 
 # Verifica colonne essenziali
 required = {col_bx, col_ao, col_aq, col_request}
-missing = required - set(filtered.columns)
+missing = required - set(df.columns)
 if missing:
     st.error(f"Colonne mancanti: {missing}")
     st.stop()
 
 # Prepara dati numerici
-clean = filtered.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
+clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
 clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
 clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['height_w'] = pd.to_numeric(clean[col_aq], errors='coerce')
@@ -75,19 +73,27 @@ clean['req_id'] = clean[col_request].astype(str)
 
 # Funzione per generare il grafico dark con Plotly
 def make_fig(data):
+    # Calcolo dei bordi
     left = data['center'] - data['width_mhz'] / 2
     right = data['center'] + data['width_mhz'] / 2
     if left.empty or right.empty:
         return None
-    min_x, max_x = left.min(), right.max()
+    min_x = left.min()
+    max_x = right.max()
     max_y = data['height_w'].max()
-    dx, dy = (max_x - min_x) * 0.05 if max_x > min_x else (1,1)
-    dy = max_y * 0.05 if max_y > 0 else 1
+    # Margini dinamici con fallback
+    if max_x > min_x:
+        dx = (max_x - min_x) * 0.05
+    else:
+        dx = 1
+    if max_y > 0:
+        dy = max_y * 0.05
+    else:
+        dy = 1
 
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
     palette = px.colors.qualitative.Dark24
-
     for i, stkh in enumerate(stakes):
         grp = data[data[col_stake] == stkh]
         fig.add_trace(go.Bar(
@@ -125,7 +131,7 @@ def make_fig(data):
             tickfont=dict(size=14),
             gridcolor='gray'
         ),
-        legend=dict(font=dict(color='#FFFFFF')), 
+        legend=dict(font=dict(color='#FFFFFF')),
         margin=dict(l=50, r=50, t=20, b=50)
     )
     return fig
