@@ -49,11 +49,11 @@ if missing:
     st.stop()
 
 # Prepara dati per il plot
-df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq]).copy()
-df_clean["center"] = pd.to_numeric(df_clean[col_bx], errors="coerce")
-df_clean["width_mhz"] = pd.to_numeric(df_clean[col_ao], errors="coerce") / 1000.0
-df_clean["height_w"] = pd.to_numeric(df_clean[col_aq], errors="coerce")
-plot_df = df_clean.dropna(subset=["center", "width_mhz", "height_w"])
+ df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq]).copy()
+ df_clean["center"] = pd.to_numeric(df_clean[col_bx], errors="coerce")
+ df_clean["width_mhz"] = pd.to_numeric(df_clean[col_ao], errors="coerce") / 1000.0
+ df_clean["height_w"] = pd.to_numeric(df_clean[col_aq], errors="coerce")
+ plot_df = df_clean.dropna(subset=["center", "width_mhz", "height_w"])
 
 if plot_df.empty:
     st.error("Nessun dato valido per il plotting.")
@@ -80,14 +80,22 @@ else:
         )
     )
     fig.update_layout(
-        xaxis=dict(range=[min_x - dx, max_x + dx], title="Frequenza (MHz)"),
-        yaxis=dict(range=[0, max_y + dy], title="Potenza (W)"),
+        xaxis=dict(
+            range=[min_x - dx, max_x + dx],
+            title=dict(text="Frequenza (MHz)", font=dict(size=20)),
+            tickfont=dict(size=16)
+        ),
+        yaxis=dict(
+            range=[0, max_y + dy],
+            title=dict(text="Potenza (W)", font=dict(size=20)),
+            tickfont=dict(size=16)
+        ),
         plot_bgcolor="#111111",
         paper_bgcolor="#111111",
         font_color="#EEEEEE",
-        margin=dict(l=40, r=40, t=40, b=40),
+        margin=dict(l=50, r=50, t=50, b=50),
         dragmode="zoom"
     )
 
-    # Render interattivo in piano veloce
+    # Render interattivo con dimensioni adattive
     st.plotly_chart(fig, use_container_width=True, theme="streamlit")
