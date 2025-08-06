@@ -38,22 +38,22 @@ with st.sidebar:
     venues = df[col_venue].dropna().unique().tolist()
     venues.sort()
     selection = st.selectbox("Choose Venue:", ["All"] + venues)
-    
+
 # Filtra dati
-df = df if selection == "All" else df[df[col_venue] == selection]
+df_filtered = df if selection == "All" else df[df[col_venue] == selection]
 
 # Verifica colonne
-missing = {col_bx, col_ao, col_aq} - set(df.columns)
+missing = {col_bx, col_ao, col_aq} - set(df_filtered.columns)
 if missing:
     st.error(f"Mancano queste colonne nel foglio '{SHEET}': {missing}")
     st.stop()
 
 # Prepara dati per il plot
-df = df.dropna(subset=[col_bx, col_ao, col_aq])
-df["center"] = pd.to_numeric(df[col_bx], errors="coerce")
-df["width_mhz"] = pd.to_numeric(df[col_ao], errors="coerce") / 1000.0
-df["height_w"] = pd.to_numeric(df[col_aq], errors="coerce")
-plot_df = df.dropna(subset=["center", "width_mhz", "height_w"])
+df_clean = df_filtered.dropna(subset=[col_bx, col_ao, col_aq]).copy()
+df_clean["center"] = pd.to_numeric(df_clean[col_bx], errors="coerce")
+df_clean["width_mhz"] = pd.to_numeric(df_clean[col_ao], errors="coerce") / 1000.0
+df_clean["height_w"] = pd.to_numeric(df_clean[col_aq], errors="coerce")
+plot_df = df_clean.dropna(subset=["center", "width_mhz", "height_w"])
 
 if plot_df.empty:
     st.error("Nessun dato valido per il plotting.")
@@ -66,30 +66,28 @@ else:
     dx = (max_x - min_x) * 0.05
     dy = max_y * 0.05
 
-    # Costruisci figure Plotly
-    fig = go.Figure()
-    for _, row in plot_df.iterrows():
-        c = row["center"]
-        w = row["width_mhz"]
-        h = row["height_w"]
-        fig.add_shape(
-            type="rect",
-            x0=c - w/2,
-            x1=c + w/2,
-            y0=0,
-            y1=h,
-            line=dict(color="White"),
-            fillcolor="RoyalBlue",
+    # Usa un trace Bar per prestazioni migliori rispetto a shapes
+    fig = go.Figure(
+        go.Bar(
+            x=plot_df["center"],
+            y=plot_df["height_w"],
+            width=plot_df["width_mhz"],
+            marker_color="RoyalBlue",
             opacity=0.7,
+            marker_line_color="White",
+            marker_line_width=1.5,
+            base=0
         )
+    )
     fig.update_layout(
         xaxis=dict(range=[min_x - dx, max_x + dx], title="Frequenza (MHz)"),
         yaxis=dict(range=[0, max_y + dy], title="Potenza (W)"),
         plot_bgcolor="#111111",
         paper_bgcolor="#111111",
         font_color="#EEEEEE",
-        margin=dict(l=40, r=40, t=10, b=40),
+        margin=dict(l=40, r=40, t=40, b=40),
         dragmode="zoom"
     )
-    # Visualizza con interattività
-    st.plotly_chart(fig, use_container_width=True)
+
+    # Render interattivo in piano veloce
+    st.plotly_chart(fig, use_container_width=True, theme="streamlit")
