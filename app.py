@@ -30,8 +30,10 @@ def load_data():
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
-# Carica dati originali
-df = load_data().copy()
+# Carica dati
+_df = load_data().copy()
+
+df = _df.copy()
 
 # Sidebar di selezione
 with st.sidebar:
@@ -79,23 +81,63 @@ def make_fig(data):
     dx = (max_x - min_x) * 0.05 if max_x > min_x else 1
     dy = max_y * 0.05 if max_y > 0 else 1
 
-    # Calcola range per tick distribuzione
     x_range = (max_x + dx) - (min_x - dx)
-    y_range = (max_y + dy) - 0
+    y_range = max_y + dy
 
     fig = go.Figure()
     stakes = data[col_stake].astype(str).unique()
     palette = px.colors.qualitative.Dark24
     for i, stkh in enumerate(stakes):
         grp = data[data[col_stake] == stkh]
-        fig.add_trace(go.Bar(
-            x=grp['center'],
-            y=grp['height_w'],
-            width=grp['width_mhz'],
-            name=stkh,
-            marker_color=palette[i % len(palette)],
-            opacity=0.8,
-            marker_line_color='white',
-            marker_line_width=1,
-            customdata=list(zip(grp['req_id'], grp[col_ao])),
-            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'
+        fig.add_trace(
+            go.Bar(
+                x=grp['center'],
+                y=grp['height_w'],
+                width=grp['width_mhz'],
+                name=stkh,
+                marker_color=palette[i % len(palette)],
+                opacity=0.8,
+                marker_line_color='white',
+                marker_line_width=1,
+                customdata=list(zip(grp['req_id'], grp[col_ao])),
+                hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Power: %{y} W<br>Bandwidth: %{customdata[1]} kHz<extra></extra>'
+            )
+        )
+
+    # Layout completamente dark con ticks auto
+    fig.update_layout(
+        template='plotly_dark',
+        barmode='overlay',
+        dragmode='zoom',
+        plot_bgcolor='#111111',
+        paper_bgcolor='#111111',
+        font_color='#EEEEEE',
+        xaxis=dict(
+            range=[min_x - dx, max_x + dx],
+            title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18)),
+            tickfont=dict(size=14),
+            gridcolor='gray',
+            tickmode='auto'
+        ),
+        yaxis=dict(
+            range=[0, max_y + dy],
+            title=dict(text='<b>Potenza (W)</b>', font=dict(size=18)),
+            tickfont=dict(size=14),
+            gridcolor='gray',
+            tickmode='auto'
+        ),
+        legend=dict(font=dict(color='#FFFFFF')),
+        margin=dict(l=50, r=50, t=20, b=50)
+    )
+    return fig
+
+# Visualizza grafico
+def main():
+    fig = make_fig(clean)
+    if fig is None:
+        st.info(f"Nessun dato disponibile per il periodo {period_sel}.")
+    else:
+        st.plotly_chart(fig, use_container_width=True)
+
+# Esegui
+main()
