@@ -97,8 +97,8 @@ def make_fig(data):
             hovertemplate=(
                 'Request ID: %{customdata[0]}<br>'
                 'Freq: %{x} MHz<br>'
-                'Power: %{y} W<br>'
-                'Bandwidth: %{customdata[1]} kHz<extra></extra>'
+                'Bandwidth: %{customdata[1]} kHz'
+                'Power: %{y} W<br><extra></extra>'
             )
         ))
     fig.update_layout(
