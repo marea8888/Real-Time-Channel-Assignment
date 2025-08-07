@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import gdown
 import plotly.graph_objects as go
 import plotly.express as px
@@ -63,11 +64,13 @@ if missing:
     st.stop()
 
 # Prepara dati
-clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
-clean['center']    = pd.to_numeric(clean[col_bx], errors='coerce')
-clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
-clean['height_w']  = pd.to_numeric(clean[col_aq], errors='coerce')
-clean['req_id']    = clean[col_request].astype(str)
+df_clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
+df_clean['center']    = pd.to_numeric(df_clean[col_bx], errors='coerce')
+df_clean['width_mhz']  = pd.to_numeric(df_clean[col_ao], errors='coerce') / 1000.0
+# Calcola potenza in dBm
+# P_dBm = 10*log10(P_W*1000)
+df_clean['power_dBm']  = 10 * np.log10(pd.to_numeric(df_clean[col_aq], errors='coerce') * 1000)
+df_clean['req_id']     = df_clean[col_request].astype(str)
 
 # Funzione per generare il grafico dark
 def make_fig(data):
@@ -77,10 +80,10 @@ def make_fig(data):
     left  = data['center'] - data['width_mhz'] / 2
     right = data['center'] + data['width_mhz'] / 2
     min_x, max_x = left.min(), right.max()
-    max_y = data['height_w'].max()
+    min_y, max_y = data['power_dBm'].min(), data['power_dBm'].max()
     # Margini
     dx = max((max_x - min_x) * 0.05, 1)
-    dy = max(max_y * 0.05, 1)
+    dy = max((max_y - min_y) * 0.05, 1)
 
     x_range = (max_x + dx) - (min_x - dx)
 
@@ -91,7 +94,7 @@ def make_fig(data):
         grp = data[data[col_stake] == stake]
         fig.add_trace(go.Bar(
             x=grp['center'],
-            y=grp['height_w'],
+            y=grp['power_dBm'],
             width=grp['width_mhz'],
             name=stake,
             marker_color=palette[i % len(palette)],
@@ -103,7 +106,7 @@ def make_fig(data):
                 'Request ID: %{customdata[0]}<br>' +
                 'Freq: %{x} MHz<br>' +
                 'Bandwidth: %{customdata[1]} kHz<br>' +
-                'Power: %{y} W<extra></extra>'
+                'Power: %{y:.1f} dBm<extra></extra>'
             )
         ))
     # Layout dark con griglia primaria e secondaria sfocata
@@ -121,26 +124,17 @@ def make_fig(data):
             showgrid=True,
             gridcolor='rgba(255,255,255,0.5)',
             gridwidth=1,
-            # Secondary (minor) grid
-            minor=dict(
-                showgrid=True,
-                gridcolor='rgba(255,255,255,0.2)',
-                gridwidth=1
-            ),
+            minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
             tickmode='auto'
         ),
         yaxis=dict(
-            range=[0, max_y],
-            title=dict(text='<b>Power (W)</b>', font=dict(size=20, color='#FFFFFF')),
+            range=[min_y - dy, max_y + dy],
+            title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
             showgrid=True,
             gridcolor='rgba(255,255,255,0.5)',
             gridwidth=1,
-            minor=dict(
-                showgrid=True,
-                gridcolor='rgba(255,255,255,0.2)',
-                gridwidth=1
-            ),
+            minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
             tickmode='auto'
         ),
         legend=dict(font=dict(color='#FFFFFF')),
@@ -150,7 +144,7 @@ def make_fig(data):
 
 # Visualizza grafico
 def main():
-    fig = make_fig(clean)
+    fig = make_fig(df_clean)
     if fig is None:
         st.info(f"Nessun dato disponibile per il periodo {period_sel}.")
     else:
