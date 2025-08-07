@@ -200,33 +200,34 @@ def main_display():
         # Remove zero-occupancy entries
         if 'Occupancy' in usage_df.columns:
             usage_df = usage_df[usage_df['Occupancy'] > 0]
-        # Build horizontal bar chart with gradient colors
-        fig2 = go.Figure()
-        # Compute color for each bar based on Usage%: 0%->green,100%->red
-        colors = []
-        for usage in usage_df['Occupancy']:
-            r = int(255 * usage / 100)
-            g = int(255 * (1 - usage / 100))
-            colors.append(f'rgb({r},{g},0)')
-        # Add bars with gradient colors
-        for (idx, row), color in zip(usage_df.iterrows(), colors):
-            fig2.add_trace(go.Bar(
-                x=[row['Occupancy']],
-                y=[f"{row['Venue']} ({row['Range']})"],
-                orientation='h',
-                text=f"{row['Occupancy']:.1f}%",
-                textposition='outside',
-                marker_color=color
-            ))
-        
+        # Build horizontal bar chart with continuous colorbar
+        # Use Occupancy values for both bar length and color mapping
+        occ_values = usage_df['Occupancy'].tolist()
+        labels = [f"{row['Venue']} ({row['Range']})" for _, row in usage_df.iterrows()]
+        fig2 = go.Figure(go.Bar(
+            x=occ_values,
+            y=labels,
+            orientation='h',
+            marker=dict(
+                color=occ_values,
+                colorscale='RdYlGn_r',  # green (low) to red (high)
+                cmin=0,
+                cmax=100,
+                colorbar=dict(
+                    title='Occupancy %',
+                    thickness=15,
+                    lenmode='fraction', len=0.75,
+                )
+            ),
+            text=[f"{v:.1f}%" for v in occ_values],
+            textposition='outside'
+        ))
         fig2.update_layout(
             xaxis_title='Occupancy (%)',
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-            margin=dict(l=100, r=50, t=20, b=50),
-            barmode='stack',
-            showlegend=False
+            margin=dict(l=100, r=50, t=20, b=50)
         )
         st.plotly_chart(fig2, use_container_width=True)
         # Separator
@@ -244,7 +245,7 @@ def main_display():
 
     # List KO assignments under the charts
     st.markdown("---")
-    st.subheader("Failed Assignments")
+    st.subheader("Failed Assignments (KO)")
     # KO entries: those without an attributed frequency
     ko_df = filtered[filtered[col_bx].isna()].copy()
     # Display relevant technical columns
