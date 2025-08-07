@@ -78,7 +78,7 @@ def make_fig(data):
     min_x, max_x = left.min(), right.max()
     max_y = data['height_w'].max()
     dx = max((max_x - min_x) * 0.005, 1)
-    dy = max(max_y, 1)
+    dy = max(max_y * 0.00005, 1)
 
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
