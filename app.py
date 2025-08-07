@@ -245,7 +245,7 @@ def main_display():
 
         # List KO assignments under the charts
     st.markdown("---")
-    st.subheader("Failed Assignments (KO)")
+    st.subheader("Failed Assignments")
     # KO entries: those without an attributed frequency
     ko_df = filtered[filtered[col_bx].isna()].copy()
     # Display all columns from the main sheet for KO entries
