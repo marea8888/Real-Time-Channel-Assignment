@@ -62,6 +62,21 @@ with st.sidebar:
         df = df[df[col_venue] == venue_sel]
 
     st.markdown("---")
+    # Service con icona e senza label della selectbox
+    st.header("🔧 Seleziona Service")
+    # Colonna 'Service Tri Code'
+    df = df.copy()
+    services = sorted(df['Service Tri Code'].dropna().astype(str).unique().tolist())
+    service_sel = st.selectbox(
+        label="",
+        options=["All"] + services,
+        index=0,
+        label_visibility="collapsed"
+    )
+    if service_sel != "All":
+        df = df[df['Service Tri Code'].astype(str) == service_sel]
+
+    st.markdown("---")
     # Stakeholder con icona e senza label della selectbox
     st.header("👥 Seleziona Stakeholder")
     stakeholders = sorted(df[col_stake].dropna().unique().tolist())
