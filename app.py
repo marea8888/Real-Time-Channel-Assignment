@@ -218,7 +218,7 @@ def main_display():
         # Display pie chart
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
-
+        
 # Run
 if __name__ == "__main__":
     main_display()
