@@ -147,7 +147,7 @@ def stats_fig(df_all):
     )
     # Show percent with absolute in parentheses, labels outside with connector lines
     fig.update_traces(
-        textinfo='percent+value',
+        textinfo='percent',
         texttemplate='%{percent:.1%} (%{value})',
         textfont=dict(size=18),
         textposition='outside',  # place labels outside
@@ -173,15 +173,6 @@ def main_display():
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
     # Display pie chart on the left with space on the right
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        pie = stats_fig(df)
-        st.plotly_chart(pie, use_container_width=True)
-    with col2:
-        st.empty()
-
-# Run display
-main_display() pie chart on the left with space on the right
     col1, col2 = st.columns([1, 2])
     with col1:
         pie = stats_fig(df)
