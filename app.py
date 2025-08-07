@@ -220,7 +220,7 @@ def main_display():
             ))
         
         fig2.update_layout(
-            xaxis_title='Usage (%)',
+            xaxis_title='Occupancy (%)',
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
@@ -244,7 +244,7 @@ def main_display():
 
     # List KO assignments under the charts
     st.markdown("---")
-    st.subheader("Failed Assignments (KO)")
+    st.subheader("Failed Assignments")
     # KO entries: those without an attributed frequency
     ko_df = filtered[filtered[col_bx].isna()].copy()
     # Display relevant technical columns
