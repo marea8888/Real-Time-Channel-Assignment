@@ -37,22 +37,40 @@ df = _df.copy()
 
 # Sidebar selezione
 with st.sidebar:
-    st.header("Seleziona Periodo")
+    # Periodo con icona e senza label della selectbox
+    st.header("🗓️ Seleziona Periodo")
     periods = ["Olympic", "Paralympic"]
-    period_sel = st.selectbox("License Period", periods, index=0)
+    period_sel = st.selectbox(
+        label="",
+        options=periods,
+        index=0,
+        label_visibility="collapsed"
+    )
 
     st.markdown("---")
-    st.header("Seleziona Venue")
+    # Venue con icona e senza label della selectbox
+    st.header("📍 Seleziona Venue")
     df = df[df[col_period] == period_sel]
     venues = sorted(df[col_venue].dropna().unique().tolist())
-    venue_sel = st.selectbox("Venue", ["All"] + venues)
+    venue_sel = st.selectbox(
+        label="",
+        options=["All"] + venues,
+        index=0,
+        label_visibility="collapsed"
+    )
     if venue_sel != "All":
         df = df[df[col_venue] == venue_sel]
 
     st.markdown("---")
-    st.header("Seleziona Stakeholder")
+    # Stakeholder con icona e senza label della selectbox
+    st.header("👥 Seleziona Stakeholder")
     stakeholders = sorted(df[col_stake].dropna().unique().tolist())
-    stake_sel = st.selectbox("Stakeholder", ["All"] + stakeholders)
+    stake_sel = st.selectbox(
+        label="",
+        options=["All"] + stakeholders,
+        index=0,
+        label_visibility="collapsed"
+    )
     if stake_sel != "All":
         df = df[df[col_stake] == stake_sel]
 
