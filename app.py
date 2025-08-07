@@ -177,13 +177,25 @@ def main_display():
             f_to = float(r['Freq. To [MHz]'])
             tot = float(r['Tot MHz'])
             assigns = clean[clean[col_venue] == venue]
+            # collect clipped intervals
             overlaps = []
             for _, a in assigns.iterrows():
                 left = a['center'] - a['width_mhz']/2
                 right = a['center'] + a['width_mhz']/2
-                ov = max(0, min(right, f_to) - max(left, f_from))
-                overlaps.append(ov)
-            assigned_overlap = sum(overlaps)
+                # clip to the capacity range
+                start = max(left, f_from)
+                end = min(right, f_to)
+                if end > start:
+                    overlaps.append((start, end))
+            # merge intervals to compute union length
+            overlaps_sorted = sorted(overlaps, key=lambda x: x[0])
+            merged = []
+            for interval in overlaps_sorted:
+                if not merged or interval[0] > merged[-1][1]:
+                    merged.append(list(interval))
+                else:
+                    merged[-1][1] = max(merged[-1][1], interval[1])
+            assigned_overlap = sum(end - start for start, end in merged)
             usage_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
             usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Usage': usage_pct})
         usage_df = pd.DataFrame(usage_list)
