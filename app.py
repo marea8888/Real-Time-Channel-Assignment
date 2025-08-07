@@ -209,7 +209,7 @@ def main_display():
             r = int(255 * usage / 100)
             g = int(255 * (1 - usage / 100))
             colors.append(f'rgb({r},{g},0)')
-        # Add bars
+        # Add bars with gradient colors
         for (idx, row), color in zip(usage_df.iterrows(), colors):
             fig2.add_trace(go.Bar(
                 x=[row['Usage']],
@@ -219,19 +219,16 @@ def main_display():
                 textposition='outside',
                 marker_color=color
             ))
-            fig2.add_trace(go.Bar(
-                x=[row['Usage']],
-                y=[f"{row['Venue']} ({row['Range']})"],
-                orientation='h',
-                text=f"{row['Usage']:.1f}%",
-                textposition='outside'
-            ))
+        
         fig2.update_layout(
             xaxis_title='Usage (%)',
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-            margin=dict(l=100, r=50, t=20, b=50), barmode='stack', showlegend=False
+            margin=dict(l=100, r=50, t=20, b=50),
+            barmode='stack',
+            showlegend=False
+        )
         )
         st.plotly_chart(fig2, use_container_width=True)
         # Separator
