@@ -197,11 +197,11 @@ def main_display():
             occupancy_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
             usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': occupancy_pct})
         usage_df = pd.DataFrame(usage_list)
-                # Remove zero-occupancy entries
-        usage_df = usage_df[usage_df['Occupancy'] > 0][usage_df['Occupancy'] > 0]
-        usage_df = usage_df[usage_df['Usage'] > 0]
+        # Remove zero-occupancy entries
+        if 'Occupancy' in usage_df.columns:
+            usage_df = usage_df[usage_df['Occupancy'] > 0]
         # Build horizontal bar chart with gradient colors
-        fig2 = go.Figure()
+        fig2 = go.Figure()()
         # Compute color for each bar based on Usage%: 0%->green,100%->red
         colors = []
         for usage in usage_df['Usage']:
