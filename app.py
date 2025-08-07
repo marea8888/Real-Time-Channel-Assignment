@@ -42,22 +42,45 @@ with st.sidebar:
     periods = ["Olympic", "Paralympic"]
     st.selectbox("", periods, key="period_sel", index=0, label_visibility="collapsed")
     st.markdown("---")
-    st.header("📍 Select Venue")
+    st.header("📍 Select Venue (multi)")
     df_period = _df[_df[col_period] == st.session_state.period_sel]
     venues = sorted(df_period[col_venue].dropna().unique())
-    st.selectbox("", ["All"] + venues, key="venue_sel", index=0, label_visibility="collapsed")
+    venue_sel = st.multiselect(
+        label="", options=venues,
+        default=venues,
+        key="venue_sel",
+        label_visibility="collapsed"
+    )
     st.markdown("---")
-    st.header("🔧 Select Service")
-    df_ven = df_period if st.session_state.venue_sel == "All" else df_period[df_period[col_venue] == st.session_state.venue_sel]
+    st.header("🔧 Select Service (multi)")
+    df_ven = df_period if not venue_sel else df_period[df_period[col_venue].isin(venue_sel)]
     services = sorted(df_ven[col_service].dropna().astype(str).unique())
-    st.selectbox("", ["All"] + services, key="service_sel", index=0, label_visibility="collapsed")
+    service_sel = st.multiselect(
+        label="", options=services,
+        default=services,
+        key="service_sel",
+        label_visibility="collapsed"
+    )
     st.markdown("---")
     st.header("👥 Select Stakeholder")
-    df_serv = df_ven if st.session_state.service_sel == "All" else df_ven[df_ven[col_service].astype(str) == st.session_state.service_sel]
+    df_serv = df_ven if not service_sel else df_ven[df_ven[col_service].astype(str).isin(service_sel)]
     stakeholders = sorted(df_serv[col_stake].dropna().astype(str).unique())
-    st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
+    st.selectbox(
+        label="", options=["All"] + stakeholders,
+        key="stake_sel", index=0,
+        label_visibility="collapsed"
+    )
 
 # Apply filters
+df = _df[_df[col_period] == st.session_state.period_sel]
+if st.session_state.venue_sel:
+    df = df[df[col_venue].isin(st.session_state.venue_sel)]
+if st.session_state.service_sel:
+    df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
+if st.session_state.stake_sel != "All":
+    df = df[df[col_stake] == st.session_state.stake_sel]
+
+# Ensure necessary columns
 df = _df[_df[col_period] == st.session_state.period_sel]
 if st.session_state.venue_sel != "All":
     df = df[df[col_venue] == st.session_state.venue_sel]
