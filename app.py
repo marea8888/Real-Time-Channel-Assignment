@@ -156,22 +156,21 @@ def stats_fig(df_all):
 # Display
 
 def main_display():
-    # Frequency spectrum and stats
+    # Frequency spectrum
     fig = make_fig(clean)
     if fig:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
-    # Layout: pie chart | separator | usage bar
-    # Pre-calc usage data
+    # Layout: capacity chart 3/4 width, separator, pie chart 1/4 width
     assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
     venues_list = assigned_bw.index.tolist()
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])  # capacity chart 3/4 width, separator, pie 1/4 width
+    col1, col_sep, col2 = st.columns([3, 0.02, 1])
+    # Capacity chart on the left (3/4)
     with col1:
-        # Usage percentage per venue and frequency range (capacity chart)
-        cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
         usage_list = []
+        cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
         for _, r in cap_selected.iterrows():
             venue = r['Venue']
             f_from = float(r['Freq. From [MHz]'])
@@ -188,7 +187,6 @@ def main_display():
             usage_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
             usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Usage': usage_pct})
         usage_df = pd.DataFrame(usage_list)
-        # Horizontal bar chart by venue-range
         fig2 = go.Figure()
         for _, row in usage_df.iterrows():
             fig2.add_trace(go.Bar(
@@ -203,22 +201,22 @@ def main_display():
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-            margin=dict(l=100, r=50, t=20, b=50),
-            barmode='stack',
-            showlegend=False
+            margin=dict(l=100, r=50, t=20, b=50), barmode='stack', showlegend=False
         )
         st.plotly_chart(fig2, use_container_width=True)
+    # Separator
     with col_sep:
-        # Vertical separator
         st.markdown(
             "<div style='border-left:2px solid #888; height:100%;'></div>",
             unsafe_allow_html=True
         )
+    # Pie chart on the right (1/4)
     with col2:
-        # Display pie chart
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
-        
+
 # Run
+if __name__ == "__main__":
+    main_display()
 if __name__ == "__main__":
     main_display()
