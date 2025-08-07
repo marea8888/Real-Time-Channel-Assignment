@@ -243,14 +243,14 @@ def main_display():
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
 
-    # List KO assignments under the charts
+        # List KO assignments under the charts
     st.markdown("---")
-    st.subheader("Failed Assignments")
+    st.subheader("Failed Assignments (KO)")
     # KO entries: those without an attributed frequency
     ko_df = filtered[filtered[col_bx].isna()].copy()
-    # Display relevant technical columns
+    # Display all columns from the main sheet for KO entries
     st.dataframe(
-        ko_df[[col_request, col_stake, col_service, col_venue, col_period, col_ao, col_aq]],
+        ko_df,
         use_container_width=True
     )
 
