@@ -150,6 +150,11 @@ def stats_fig(df_all):
         textinfo='percent',
         texttemplate='%{percent:.1%} (%{value})',
         textfont=dict(size=18),
+        textposition='outside',  # place labels outside with connector lines
+        pull=[0.1]*len(stats),  # pull slices slightly for emphasis
+        marker=dict(line=dict(color='#FFFFFF', width=2))
+    )',
+        textfont=dict(size=18),
         textposition='auto',
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
