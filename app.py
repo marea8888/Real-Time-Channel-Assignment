@@ -64,24 +64,29 @@ if missing:
 
 # Prepara dati
 clean = df.dropna(subset=[col_bx, col_ao, col_aq, col_request]).copy()
-clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
+clean['center']    = pd.to_numeric(clean[col_bx], errors='coerce')
 clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
-clean['height_w'] = pd.to_numeric(clean[col_aq], errors='coerce')
-clean['req_id'] = clean[col_request].astype(str)
+clean['height_w']  = pd.to_numeric(clean[col_aq], errors='coerce')
+clean['req_id']    = clean[col_request].astype(str)
 
 # Funzione per generare il grafico dark
 def make_fig(data):
     if data.empty:
         return None
-    left = data['center'] - data['width_mhz'] / 2
+    # Calcolo range
+    left  = data['center'] - data['width_mhz'] / 2
     right = data['center'] + data['width_mhz'] / 2
     min_x, max_x = left.min(), right.max()
     max_y = data['height_w'].max()
-    dx = max((max_x - min_x) * 0.005, 1)
-    dy = max(max_y * 0.00005, 1)
+    # Margini
+    dx = max((max_x - min_x) * 0.05, 1)
+    dy = max(max_y * 0.05, 1)
+    x_range = (max_x + dx) - (min_x - dx)
+    y_range = max_y + dy
 
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
+    # Barre per stakeholder
     for i, stake in enumerate(data[col_stake].astype(str).unique()):
         grp = data[data[col_stake] == stake]
         fig.add_trace(go.Bar(
@@ -92,15 +97,16 @@ def make_fig(data):
             marker_color=palette[i % len(palette)],
             opacity=0.8,
             marker_line_color='white',
-            marker_line_width=1.5,
+            marker_line_width=1,
             customdata=list(zip(grp['req_id'], grp[col_ao])),
             hovertemplate=(
-                'Request ID: %{customdata[0]}<br>'
-                'Freq: %{x} MHz<br>'
-                'Bandwidth: %{customdata[1]} kHz<br>'
-                'Power: %{y} W<br><extra></extra>'
+                'Request ID: %{customdata[0]}<br>' +
+                'Freq: %{x} MHz<br>' +
+                'Bandwidth: %{customdata[1]} kHz<br>' +
+                'Power: %{y} W<extra></extra>'
             )
         ))
+    # Layout dark con griglia tratteggiata bianca e dtick elevato
     fig.update_layout(
         template='plotly_dark',
         barmode='overlay',
@@ -110,17 +116,23 @@ def make_fig(data):
         font_color='#FFFFFF',
         xaxis=dict(
             range=[min_x - dx, max_x + dx],
-            title=dict(text='<b>Frequency [MHz]</b>', font=dict(size=22, color='#FFFFFF')),
-            tickfont=dict(size=18, color='#FFFFFF'),
-            gridcolor='gray',
-            tickmode='auto'
+            title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFFFFF')),
+            tickfont=dict(size=14, color='#FFFFFF'),
+            gridcolor='#FFFFFF',
+            gridwidth=1,
+            griddash='dash',
+            tickmode='linear',
+            dtick=x_range / 20
         ),
         yaxis=dict(
-            range=[0, max_y],
-            title=dict(text='<b>Power [W]</b>', font=dict(size=22, color='#FFFFFF')),
-            tickfont=dict(size=18, color='#FFFFFF'),
-            gridcolor='gray',
-            tickmode='auto'
+            range=[0, max_y + dy],
+            title=dict(text='<b>Power (W)</b>', font=dict(size=20, color='#FFFFFF')),
+            tickfont=dict(size=14, color='#FFFFFF'),
+            gridcolor='#FFFFFF',
+            gridwidth=1,
+            griddash='dash',
+            tickmode='linear',
+            dtick=y_range / 20
         ),
         legend=dict(font=dict(color='#FFFFFF')),
         margin=dict(l=50, r=50, t=20, b=50)
