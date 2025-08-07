@@ -67,30 +67,33 @@ with st.sidebar:
         key="period_sel", index=0, label_visibility="collapsed"
     )
     st.markdown("---")
-    st.header("📍 Select Venue (multi)")
+    # Stakeholder (single-select)
+    st.header("👥 Select Stakeholder")
     df_period = _df[_df[col_period] == st.session_state.period_sel]
-    venues = sorted(df_period[col_venue].dropna().unique())
-    st.multiselect(
-        label="", options=venues,
-        default=venues, key="venue_sel",
-        label_visibility="collapsed"
+    stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
+    st.selectbox(
+        label="", options=["All"] + stakeholders,
+        key="stake_sel", index=0, label_visibility="collapsed"
     )
     st.markdown("---")
-    st.header("🔧 Select Service (multi)")
-    df_ven = df_period[df_period[col_venue].isin(st.session_state.venue_sel)] if st.session_state.venue_sel else df_period
-    services = sorted(df_ven[col_service].dropna().astype(str).unique())
+    # Service (multi-select)
+    st.header("🔧 Select Service")
+    df_stake = df_period if st.session_state.stake_sel == "All" else df_period[df_period[col_stake] == st.session_state.stake_sel]
+    services = sorted(df_stake[col_service].dropna().astype(str).unique())
     st.multiselect(
         label="", options=services,
         default=services, key="service_sel",
         label_visibility="collapsed"
     )
     st.markdown("---")
-    st.header("👥 Select Stakeholder")
-    df_serv = df_ven[df_ven[col_service].astype(str).isin(st.session_state.service_sel)] if st.session_state.service_sel else df_ven
-    stakeholders = sorted(df_serv[col_stake].dropna().astype(str).unique())
-    st.selectbox(
-        label="", options=["All"] + stakeholders,
-        key="stake_sel", index=0, label_visibility="collapsed"
+    # Venue (multi-select)
+    st.header("📍 Select Venue")
+    df_service = df_stake if not st.session_state.service_sel else df_stake[df_stake[col_service].astype(str).isin(st.session_state.service_sel)]
+    venues = sorted(df_service[col_venue].dropna().unique())
+    st.multiselect(
+        label="", options=venues,
+        default=venues, key="venue_sel",
+        label_visibility="collapsed"
     )
 
 # Apply filters
