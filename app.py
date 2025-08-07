@@ -200,19 +200,19 @@ def main_display():
             usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': usage_pct})
         usage_df = pd.DataFrame(usage_list)
         # Remove zero-usage entries
-        usage_df = usage_df[usage_df['Usage'] > 0]
+        usage_df = usage_df[usage_df['Occupancy'] > 0]
         # Build horizontal bar chart with gradient colors
         fig2 = go.Figure()
         # Compute color for each bar based on Usage%: 0%->green,100%->red
         colors = []
-        for usage in usage_df['Usage']:
+        for usage in usage_df['Occupancy']:
             r = int(255 * usage / 100)
             g = int(255 * (1 - usage / 100))
             colors.append(f'rgb({r},{g},0)')
         # Add bars with gradient colors
         for (idx, row), color in zip(usage_df.iterrows(), colors):
             fig2.add_trace(go.Bar(
-                x=[row['Usage']],
+                x=[row['Occupancy']],
                 y=[f"{row['Venue']} ({row['Range']})"],
                 orientation='h',
                 text=f"{row['Occupancy']:.1f}%",
@@ -221,7 +221,7 @@ def main_display():
             ))
         
         fig2.update_layout(
-            xaxis_title='Usage (%)',
+            xaxis_title='Occupancy (%)',
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
