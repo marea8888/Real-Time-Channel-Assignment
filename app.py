@@ -33,13 +33,21 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Load data
-# Custom CSS for multiselect inputs
+# Custom CSS for multiselect tokens
 st.markdown(
     """
     <style>
-    /* Light blue background for multiselect widgets */
-    .stSidebar .stMultiSelect [data-baseweb] > div {
-        background-color: #e0f7fa;
+    /* Style multiselect chips (selected options) */
+    .stSidebar [data-baseweb="tag"] {
+        background-color: #e0f7fa !important;
+        color: #000000 !important;
+        border-radius: 4px !important;
+        padding: 2px 6px !important;
+        margin: 2px !important;
+    }
+    /* Style the remove icon inside chips */
+    .stSidebar [data-baseweb="tag"][role="button"] svg {
+        fill: #000000 !important;
     }
     </style>
     """,
