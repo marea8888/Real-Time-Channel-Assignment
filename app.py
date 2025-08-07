@@ -223,7 +223,12 @@ def main_display():
             textposition='outside'
         ))
         fig2.update_layout(
-            xaxis_title='Occupancy (%)',
+            xaxis=dict(visible=False),  # hide x-axis entirely
+            yaxis_title='',
+            template='plotly',
+            plot_bgcolor='white', paper_bgcolor='white', font_color='black',
+            margin=dict(l=100, r=50, t=20, b=50)
+        )',
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
