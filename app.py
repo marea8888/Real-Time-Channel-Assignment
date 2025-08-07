@@ -174,34 +174,53 @@ def main_display():
             "<div style='border-left:2px solid #888; height:100%;'></div>",
             unsafe_allow_html=True
         )
-    with col2:
-        # Usage percentage per venue (Assigned bandwidth in MHz / Total MHz)
-        assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()  # width_mhz is channel bandwidth converted to MHz
-        venues_list = assigned_bw.index.tolist()
-        cap = cap_df[cap_df["Venue"].isin(venues_list)].copy()
-        cap["Assigned"] = cap["Venue"].map(assigned_bw).fillna(0)
-        cap["Usage"] = cap["Assigned"] / cap["Tot MHz"] * 100
-
-        # Horizontal bar chart of usage percentage (no chart title)
-        fig2 = go.Figure(go.Bar(
-            x=cap["Usage"],
-            y=cap["Venue"],
-            orientation='h',
-            marker_color='#1f77b4',
-            text=cap["Usage"].round(1).astype(str) + "%",
-            textposition='outside'
-        ))
+        with col2:
+        # Usage percentage per venue and frequency range
+        cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
+        usage_list = []
+        for _, r in cap_selected.iterrows():
+            venue = r['Venue']
+            f_from = float(r['Freq. From [MHz]'])
+            f_to = float(r['Freq. To [MHz]'])
+            tot = float(r['Tot MHz'])
+            # filter assignments for this venue
+            assigns = clean[clean[col_venue] == venue]
+            # compute overlap for each assignment
+            overlaps = []
+            for _, a in assigns.iterrows():
+                left = a['center'] - a['width_mhz']/2
+                right = a['center'] + a['width_mhz']/2
+                # overlap interval
+                ov = max(0, min(right, f_to) - max(left, f_from))
+                overlaps.append(ov)
+            assigned_overlap = sum(overlaps)
+            usage_pct = assigned_overlap / tot * 100 if tot > 0 else 0
+            usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Usage': usage_pct})
+        usage_df = pd.DataFrame(usage_list)
+        # Horizontal bar chart by venue-range
+        fig2 = go.Figure()
+        for _, row in usage_df.iterrows():
+            fig2.add_trace(go.Bar(
+                x=[row['Usage']],
+                y=[f"{row['Venue']} ({row['Range']})"],
+                orientation='h',
+                name=row['Range'],
+                text=f"{row['Usage']:.1f}%",
+                textposition='outside'
+            ))
         fig2.update_layout(
-            xaxis_title='Usage (%)',  # axis label only
+            xaxis_title='Usage (%)',
             yaxis_title='',
             template='plotly',
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            font_color='black',
-            margin=dict(l=50, r=50, t=20, b=50)
+            plot_bgcolor='white', paper_bgcolor='white', font_color='black',
+            margin=dict(l=100, r=50, t=20, b=50),
+            barmode='stack',
+            showlegend=False
         )
         st.plotly_chart(fig2, use_container_width=True)
 
 # Run
+if __name__ == "__main__":
+    main_display()
 if __name__ == "__main__":
     main_display()
