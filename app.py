@@ -154,12 +154,21 @@ def stats_fig(df_all):
     return fig
 
 # Display
-with st.container():
+def main_display():
     fig = make_fig(clean)
     if fig:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
-    pie = stats_fig(df)
-    st.plotly_chart(pie, use_container_width=True)
+    # Display pie chart on the left with space on the right for future content
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        pie = stats_fig(df)
+        st.plotly_chart(pie, use_container_width=True)
+    with col2:
+        # Placeholder for additional content
+        st.empty()
+
+# Run display
+main_display()
