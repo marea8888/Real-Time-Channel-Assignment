@@ -229,7 +229,6 @@ def main_display():
             barmode='stack',
             showlegend=False
         )
-        )
         st.plotly_chart(fig2, use_container_width=True)
         # Separator
     with col_sep:
