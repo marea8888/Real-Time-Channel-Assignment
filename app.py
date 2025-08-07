@@ -156,31 +156,33 @@ def stats_fig(df_all):
 # Display
 
 def main_display():
+    # Frequency spectrum and stats
     fig = make_fig(clean)
     if fig:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
-    # Create three columns: main pie, separator, usage bar
+    # Layout: pie chart | separator | usage bar
     col1, col_sep, col2 = st.columns([1, 0.02, 1])
     with col1:
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
     with col_sep:
-        # Vertical separator line
+        # Vertical separator
         st.markdown(
-            "<div style='border-left:1px solid #888; height:100%; margin:0 10px'></div>",
+            "<div style='border-left:2px solid #888; height:100%;'></div>",
             unsafe_allow_html=True
         )
     with col2:
-        # Usage percentage bar chart (no title)
-        assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
+        # Usage percentage per venue (Assigned bandwidth in MHz / Total MHz)
+        assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()  # width_mhz is channel bandwidth converted to MHz
         venues_list = assigned_bw.index.tolist()
         cap = cap_df[cap_df["Venue"].isin(venues_list)].copy()
         cap["Assigned"] = cap["Venue"].map(assigned_bw).fillna(0)
         cap["Usage"] = cap["Assigned"] / cap["Tot MHz"] * 100
 
+        # Horizontal bar chart of usage percentage (no chart title)
         fig2 = go.Figure(go.Bar(
             x=cap["Usage"],
             y=cap["Venue"],
@@ -190,7 +192,7 @@ def main_display():
             textposition='outside'
         ))
         fig2.update_layout(
-            xaxis_title='Usage (%)',
+            xaxis_title='Usage (%)',  # axis label only
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white',
@@ -201,5 +203,7 @@ def main_display():
         st.plotly_chart(fig2, use_container_width=True)
 
 # Run
+if __name__ == "__main__":
+    main_display()
 if __name__ == "__main__":
     main_display()
