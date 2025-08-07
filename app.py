@@ -70,13 +70,13 @@ with st.sidebar:
     )
 
 # Apply filters
- df = _df[_df[col_period] == st.session_state.period_sel]
- if st.session_state.venue_sel:
-     df = df[df[col_venue].isin(st.session_state.venue_sel)]
- if st.session_state.service_sel:
-     df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
- if st.session_state.stake_sel != "All":
-     df = df[df[col_stake] == st.session_state.stake_sel]
+df = _df[_df[col_period] == st.session_state.period_sel]
+if st.session_state.venue_sel:
+    df = df[df[col_venue].isin(st.session_state.venue_sel)]
+if st.session_state.service_sel:
+    df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
+if st.session_state.stake_sel != "All":
+    df = df[df[col_stake] == st.session_state.stake_sel]
 
 # Ensure necessary columns
 required = {col_bx, col_ao, col_aq, col_request}
@@ -182,3 +182,10 @@ def main_display():
     st.markdown("---")
     col1, col2 = st.columns([1, 2])
     with col1:
+        pie = stats_fig(df)
+        st.plotly_chart(pie, use_container_width=True)
+    with col2:
+        st.empty()
+
+# Run display
+main_display()
