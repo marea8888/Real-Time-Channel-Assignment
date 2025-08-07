@@ -92,7 +92,7 @@ def make_fig(data):
             marker_color=palette[i % len(palette)],
             opacity=0.8,
             marker_line_color='white',
-            marker_line_width=1,
+            marker_line_width=1.5,
             customdata=list(zip(grp['req_id'], grp[col_ao])),
             hovertemplate=(
                 'Request ID: %{customdata[0]}<br>'
@@ -116,7 +116,7 @@ def make_fig(data):
             tickmode='auto'
         ),
         yaxis=dict(
-            range=[0, max_y + dy],
+            range=[0, max_y],
             title=dict(text='<b>Power [W]</b>', font=dict(size=22, color='#FFFFFF')),
             tickfont=dict(size=18, color='#FFFFFF'),
             gridcolor='gray',
