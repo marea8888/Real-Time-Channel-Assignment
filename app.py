@@ -199,6 +199,8 @@ def main_display():
             usage_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
             usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Usage': usage_pct})
         usage_df = pd.DataFrame(usage_list)
+        # Remove zero-usage entries
+        usage_df = usage_df[usage_df['Usage'] > 0]
         fig2 = go.Figure()
         for _, row in usage_df.iterrows():
             fig2.add_trace(go.Bar(
@@ -231,7 +233,7 @@ def main_display():
 
     # List KO assignments under the charts
     st.markdown("---")
-    st.subheader("Failed Assignments")
+    st.subheader("Failed Assignments (KO)")
     # KO entries: those without an attributed frequency
     ko_df = filtered[filtered[col_bx].isna()].copy()
     # Display relevant technical columns
