@@ -150,6 +150,11 @@ def stats_fig(df_all):
         textinfo='percent+label',
         texttemplate='%{percent:.1%} (%{value})',
         textfont=dict(size=18),
+        textposition='inside',
+        insidetextorientation='horizontal',
+        marker=dict(line=dict(color='#FFFFFF', width=2))
+    )',
+        textfont=dict(size=18),
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
     # Legend above pie
