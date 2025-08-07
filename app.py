@@ -130,22 +130,40 @@ def make_fig(data):
     return fig
 
 # Pie chart OK vs NOT ASSIGNED
-def stats_fig(df_all):
-    total = len(df_all)
-    assigned = df_all[col_bx].notna().sum()
-    not_assigned = total - assigned
-    stats = pd.DataFrame({'Status': ['ASSIGNED', 'NOT ASSIGNED'], 'Count': [assigned, not_assigned]})
-    fig = px.pie(
-        stats, names='Status', values='Count',
-        color='Status', hole=0.6,
-        color_discrete_map={'ASSIGNED': '#00FF00', 'NOT ASSIGNED': '#FF0000'},
-        template='plotly'
-    )
-    fig.update_traces(
-        textinfo='percent', textfont=dict(size=20)
-    )
-    fig.update_layout(margin=dict(l=20, r=20, t=0, b=20), showlegend=False)
-    return fig
+ def stats_fig(df_all):
+     total = len(df_all)
+     assigned = df_all[col_bx].notna().sum()
+     not_assigned = total - assigned
+     stats = pd.DataFrame({'Status': ['ASSIGNED', 'NOT ASSIGNED'], 'Count': [assigned, not_assigned]})
+     # Softer colors for pie
+     color_map = {'ASSIGNED': '#2ECC71', 'NOT ASSIGNED': '#E74C3C'}
+     fig = px.pie(
+         stats,
+         names='Status',
+         values='Count',
+         color='Status',
+         hole=0.6,
+         color_discrete_map=color_map,
+         template='plotly'
+     )
+     fig.update_traces(
+         textinfo='percent+label',
+         textfont=dict(size=18),
+         marker=dict(line=dict(color='#FFFFFF', width=2))
+     )
+     fig.update_layout(
+         margin=dict(l=20, r=20, t=0, b=20),
+         legend=dict(
+             title='',
+             orientation='h',
+             x=0.5,
+             xanchor='center',
+             y=-0.1,
+             font=dict(size=14)
+         ),
+         showlegend=True
+     )
+     return fig
 
 # Main display
 with st.container():
