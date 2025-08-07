@@ -72,12 +72,13 @@ with st.sidebar:
     )
 
 # Apply filters
+_df = _df.copy()
 df = _df[_df[col_period] == st.session_state.period_sel]
 if st.session_state.venue_sel:
     df = df[df[col_venue].isin(st.session_state.venue_sel)]
 if st.session_state.service_sel:
     df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
-if st.session_state.stake_sel != "All":
+if st.session_state.stake_sel and st.session_state.stake_sel != "All":
     df = df[df[col_stake] == st.session_state.stake_sel]
 
 # Ensure necessary columns
