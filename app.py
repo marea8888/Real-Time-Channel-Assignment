@@ -146,13 +146,13 @@ def stats_fig(df_all):
         color_discrete_map=color_map,
         template='plotly'
     )
-    # Show only percentage in slices, labels in legend
+    # Show both percentage and absolute count, with white border lines
     fig.update_traces(
-        textinfo='percent',
+        textinfo='percent+value',
         textfont=dict(size=18),
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
-    # Position legend above pie and remove title
+    # Position legend above the pie and ensure visibility
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
         legend=dict(
@@ -162,7 +162,8 @@ def stats_fig(df_all):
             xanchor='center',
             y=1.1,
             yanchor='bottom',
-            font=dict(size=14)
+            font=dict(size=14),
+            itemclick='toggleothers'
         ),
         showlegend=True
     )
