@@ -218,5 +218,3 @@ def main_display():
 # Run
 if __name__ == "__main__":
     main_display()
-if __name__ == "__main__":
-    main_display()
