@@ -215,7 +215,7 @@ def main_display():
                 x=[row['Usage']],
                 y=[f"{row['Venue']} ({row['Range']})"],
                 orientation='h',
-                text=f"{row['Usage']:.1f}%",
+                text=f"{row['Occupancy']:.1f}%",
                 textposition='outside',
                 marker_color=color
             ))
