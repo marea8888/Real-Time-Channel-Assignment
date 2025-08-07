@@ -162,11 +162,11 @@ def main_display():
     else:
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
-    col1,col2=st.columns([1,2])
+    col1, col2 = st.columns([1, 2])
     with col1:
-        pie=stats_fig(filtered)
-        st.plotly_chart(pie,use_container_width=True)
-        with col2:
+        pie = stats_fig(filtered)
+        st.plotly_chart(pie, use_container_width=True)
+    with col2:
         st.subheader("Usage % per Venue")
         assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
         venues_list = assigned_bw.index.tolist()
