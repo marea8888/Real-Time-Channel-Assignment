@@ -16,6 +16,7 @@ st.set_page_config(
 FILE_ID     = "1wlZmgpW0SGpbqEyt_b5XYT8lXgQUTYmo"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
+CAP_SHEET   = "Capacity NP-OLY"
 
 col_bx      = "Attributed Frequency TX (MHz)"
 col_ao      = "Channel Bandwidth (kHz)"
@@ -32,12 +33,16 @@ def load_data():
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
+@st.cache_data(ttl=60)
+def load_capacity():
+    # Load capacity table
+    return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
+
 # Load data
-# Custom CSS for multiselect tokens
+# Custom CSS for multiselect chips
 st.markdown(
     """
     <style>
-    /* Style multiselect chips (selected options) */
     .stSidebar [data-baseweb="tag"] {
         background-color: #e0f7fa !important;
         color: #000000 !important;
@@ -45,7 +50,6 @@ st.markdown(
         padding: 2px 6px !important;
         margin: 2px !important;
     }
-    /* Style the remove icon inside chips */
     .stSidebar [data-baseweb="tag"][role="button"] svg {
         fill: #000000 !important;
     }
@@ -55,9 +59,7 @@ st.markdown(
 )
 
 _df = load_data()
-
-_df = load_data()
-_df = load_data()
+cap_df = load_capacity()
 
 # Sidebar filters (in English)
 with st.sidebar:
@@ -67,7 +69,6 @@ with st.sidebar:
         key="period_sel", index=0, label_visibility="collapsed"
     )
     st.markdown("---")
-    # Stakeholder (single-select)
     st.header("👥 Select Stakeholder")
     df_period = _df[_df[col_period] == st.session_state.period_sel]
     stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
@@ -76,7 +77,6 @@ with st.sidebar:
         key="stake_sel", index=0, label_visibility="collapsed"
     )
     st.markdown("---")
-    # Service (multi-select)
     st.header("🔧 Select Service")
     df_stake = df_period if st.session_state.stake_sel == "All" else df_period[df_period[col_stake] == st.session_state.stake_sel]
     services = sorted(df_stake[col_service].dropna().astype(str).unique())
@@ -86,7 +86,6 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     st.markdown("---")
-    # Venue (multi-select)
     st.header("📍 Select Venue")
     df_service = df_stake if not st.session_state.service_sel else df_stake[df_stake[col_service].astype(str).isin(st.session_state.service_sel)]
     venues = sorted(df_service[col_venue].dropna().unique())
@@ -157,7 +156,7 @@ def make_fig(data):
             tickmode='auto'
         ),
         yaxis=dict(
-            range=[min_y - dy, max_y],
+            range=[min_y - dy, max_y + dy],
             title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
             showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
@@ -212,7 +211,30 @@ def main_display():
         pie = stats_fig(df)
         st.plotly_chart(pie, use_container_width=True)
     with col2:
-        st.empty()
+        # Capacity remaining chart
+        # Sum assigned bandwidth per venue
+        assigned_bw = df.groupby(col_venue)['width_mhz'].sum()
+        # Filter capacity for selected venues
+        selected_venues = assigned_bw.index.tolist()
+        cap = cap_df[cap_df['Venue'].isin(selected_venues)].copy()
+        cap['Assigned'] = cap['Venue'].map(assigned_bw).fillna(0)
+        cap['Remaining'] = cap['Tot MHz'] - cap['Assigned']
+        # Horizontal bar chart
+        fig2 = go.Figure(go.Bar(
+            x=cap['Remaining'],
+            y=cap['Venue'],
+            orientation='h',
+            marker_color='#1f77b4'
+        ))
+        fig2.update_layout(
+            title='',
+            xaxis_title='Remaining Capacity (MHz)',
+            yaxis_title='',
+            template='plotly_dark',
+            plot_bgcolor='#111111', paper_bgcolor='#111111', font_color='#FFFFFF',
+            margin=dict(l=50, r=50, t=20, b=50)
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
 # Run display
 main_display()
