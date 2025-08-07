@@ -166,15 +166,37 @@ def main_display():
     with col1:
         pie=stats_fig(filtered)
         st.plotly_chart(pie,use_container_width=True)
-    with col2:
+        with col2:
         st.subheader("Usage % per Venue")
-        assigned_bw=clean.groupby(col_venue)['width_mhz'].sum()
-        venues=assigned_bw.index.tolist()
-        cap=cap_df[cap_df['Venue'].isin(venues)].copy()
-        cap['Assigned']=cap['Venue'].map(assigned_bw).fillna(0)
-        cap['Usage']=cap['Assigned']/cap['Tot MHz']*100
-        fig2=go.Figure(go.Bar(x=cap['Usage'],y=cap['Venue'],orientation='h',
-                              marker_color='#1f77b4',text=cap['Usage'].round(1).astype(str)+'%',
-                              textposition='outside'))
-        fig2.update_layout(xaxis_title='Usage (%)',yaxis_title='',
-                           t
+        assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
+        venues_list = assigned_bw.index.tolist()
+        cap = cap_df[cap_df["Venue"].isin(venues_list)].copy()
+        cap["Assigned"] = cap["Venue"].map(assigned_bw).fillna(0)
+        cap["Usage"] = cap["Assigned"] / cap["Tot MHz"] * 100
+
+        # Horizontal bar chart of usage percentage
+        fig2 = go.Figure(go.Bar(
+            x=cap["Usage"],
+            y=cap["Venue"],
+            orientation='h',
+            marker_color='#1f77b4',
+            text=cap["Usage"].round(1).astype(str) + "%",
+            textposition='outside'
+        ))
+        fig2.update_layout(
+            xaxis_title='Usage (%)',
+            yaxis_title='',
+            template='plotly',
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font_color='black',
+            margin=dict(l=50, r=50, t=20, b=50)
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+# Run
+def main():
+    main_display()
+
+main()
+main_display()
