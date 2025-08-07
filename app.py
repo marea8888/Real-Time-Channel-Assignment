@@ -34,61 +34,49 @@ def load_data():
 
 # Load data
 _df = load_data()
-df = _df.copy()
 
 # Sidebar filters (in English)
 with st.sidebar:
     st.header("🗓️ Select Period")
-    periods = ["Olympic", "Paralympic"]
-    st.selectbox("", periods, key="period_sel", index=0, label_visibility="collapsed")
+    st.selectbox(
+        label="", options=["Olympic", "Paralympic"],
+        key="period_sel", index=0, label_visibility="collapsed"
+    )
     st.markdown("---")
     st.header("📍 Select Venue (multi)")
     df_period = _df[_df[col_period] == st.session_state.period_sel]
     venues = sorted(df_period[col_venue].dropna().unique())
-    venue_sel = st.multiselect(
+    st.multiselect(
         label="", options=venues,
-        default=venues,
-        key="venue_sel",
+        default=venues, key="venue_sel",
         label_visibility="collapsed"
     )
     st.markdown("---")
     st.header("🔧 Select Service (multi)")
-    df_ven = df_period if not venue_sel else df_period[df_period[col_venue].isin(venue_sel)]
+    df_ven = df_period[df_period[col_venue].isin(st.session_state.venue_sel)] if st.session_state.venue_sel else df_period
     services = sorted(df_ven[col_service].dropna().astype(str).unique())
-    service_sel = st.multiselect(
+    st.multiselect(
         label="", options=services,
-        default=services,
-        key="service_sel",
+        default=services, key="service_sel",
         label_visibility="collapsed"
     )
     st.markdown("---")
     st.header("👥 Select Stakeholder")
-    df_serv = df_ven if not service_sel else df_ven[df_ven[col_service].astype(str).isin(service_sel)]
+    df_serv = df_ven[df_ven[col_service].astype(str).isin(st.session_state.service_sel)] if st.session_state.service_sel else df_ven
     stakeholders = sorted(df_serv[col_stake].dropna().astype(str).unique())
     st.selectbox(
         label="", options=["All"] + stakeholders,
-        key="stake_sel", index=0,
-        label_visibility="collapsed"
+        key="stake_sel", index=0, label_visibility="collapsed"
     )
 
 # Apply filters
-_df = _df.copy()
-df = _df[_df[col_period] == st.session_state.period_sel]
-if st.session_state.venue_sel:
-    df = df[df[col_venue].isin(st.session_state.venue_sel)]
-if st.session_state.service_sel:
-    df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
-if st.session_state.stake_sel and st.session_state.stake_sel != "All":
-    df = df[df[col_stake] == st.session_state.stake_sel]
-
-# Ensure necessary columns
-df = _df[_df[col_period] == st.session_state.period_sel]
-if st.session_state.venue_sel != "All":
-    df = df[df[col_venue] == st.session_state.venue_sel]
-if st.session_state.service_sel != "All":
-    df = df[df[col_service].astype(str) == st.session_state.service_sel]
-if st.session_state.stake_sel != "All":
-    df = df[df[col_stake] == st.session_state.stake_sel]
+ df = _df[_df[col_period] == st.session_state.period_sel]
+ if st.session_state.venue_sel:
+     df = df[df[col_venue].isin(st.session_state.venue_sel)]
+ if st.session_state.service_sel:
+     df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
+ if st.session_state.stake_sel != "All":
+     df = df[df[col_stake] == st.session_state.stake_sel]
 
 # Ensure necessary columns
 required = {col_bx, col_ao, col_aq, col_request}
@@ -169,21 +157,17 @@ def stats_fig(df_all):
         color_discrete_map=color_map,
         template='plotly'
     )
-    # Show percent with absolute in parentheses, labels outside with connector lines
     fig.update_traces(
         textinfo='percent',
         texttemplate='%{percent:.1%} (%{value})',
         textfont=dict(size=18),
-        textposition='outside',  # place labels outside
+        textposition='outside',
         pull=[0.1] * len(stats),
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
-    # Legend above pie
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
-        legend=dict(
-            title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)
-        ),
+        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
         showlegend=True
     )
     return fig
@@ -196,13 +180,5 @@ def main_display():
     else:
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
-    # Display pie chart on the left with space on the right
     col1, col2 = st.columns([1, 2])
     with col1:
-        pie = stats_fig(df)
-        st.plotly_chart(pie, use_container_width=True)
-    with col2:
-        st.empty()
-
-# Run display
-main_display()
