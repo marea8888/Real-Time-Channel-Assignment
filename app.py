@@ -167,7 +167,7 @@ def main_display():
     # Pre-calc usage data
     assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
     venues_list = assigned_bw.index.tolist()
-    col1, col_sep, col2 = st.columns([1, 0.02, 1])
+    col1, col_sep, col2 = st.columns([3, 0.02, 1])  # usage chart 3/4 width, separator, pie 1/4 width
     with col1:
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
