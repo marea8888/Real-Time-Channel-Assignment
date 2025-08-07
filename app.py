@@ -181,13 +181,4 @@ def main_display():
         st.empty()
 
 # Run display
-main_display() pie chart on the left with space on the right
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        pie = stats_fig(df)
-        st.plotly_chart(pie, use_container_width=True)
-    with col2:
-        st.empty()
-
-# Run display
 main_display()
