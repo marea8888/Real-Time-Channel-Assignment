@@ -228,13 +228,8 @@ def main_display():
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
             margin=dict(l=100, r=50, t=20, b=50)
-        )',
-            yaxis_title='',
-            template='plotly',
-            plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-            margin=dict(l=100, r=50, t=20, b=50)
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True)(fig2, use_container_width=True)
         # Separator
     with col_sep:
         st.markdown(
