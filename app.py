@@ -197,7 +197,7 @@ def main_display():
                     merged[-1][1] = max(merged[-1][1], interval[1])
             assigned_overlap = sum(end - start for start, end in merged)
             usage_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
-            usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Usage': usage_pct})
+            usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': usage_pct})
         usage_df = pd.DataFrame(usage_list)
         # Remove zero-usage entries
         usage_df = usage_df[usage_df['Usage'] > 0]
