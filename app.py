@@ -216,13 +216,15 @@ def main_display():
             margin=dict(l=100, r=50, t=20, b=50), barmode='stack', showlegend=False
         )
         st.plotly_chart(fig2, use_container_width=True)
-    # Separator
+        # Separator
     with col_sep:
         st.markdown(
-            "<div style='border-left:2px solid #888; height:100%;'></div>",
+            """
+            <div style="width:1px; background-color:#888; height:600px; margin:0 auto;"></div>
+            """,
             unsafe_allow_html=True
         )
-    # Pie chart on the right (1/4)
+    # Pie chart on the right (1/4) on the right (1/4)
     with col2:
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
