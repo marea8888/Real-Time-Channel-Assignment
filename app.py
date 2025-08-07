@@ -213,7 +213,7 @@ def main_display():
     with col2:
         # Capacity remaining chart
         # Sum assigned bandwidth per venue
-        assigned_bw = df.groupby(col_venue)['width_mhz'].sum()
+        assigned_bw = clean.groupby(col_venue)['width_mhz'].sum()
         # Filter capacity for selected venues
         selected_venues = assigned_bw.index.tolist()
         cap = cap_df[cap_df['Venue'].isin(selected_venues)].copy()
