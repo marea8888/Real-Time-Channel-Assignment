@@ -164,18 +164,19 @@ def main_display():
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
     # Layout: pie chart | separator | usage bar
+    # Pre-calc usage data
+    assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
+    venues_list = assigned_bw.index.tolist()
     col1, col_sep, col2 = st.columns([1, 0.02, 1])
     with col1:
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
-    
     with col_sep:
         # Vertical separator
         st.markdown(
             "<div style='border-left:2px solid #888; height:100%;'></div>",
             unsafe_allow_html=True
         )
-    
     with col2:
         # Usage percentage per venue and frequency range
         cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
@@ -193,7 +194,7 @@ def main_display():
                 ov = max(0, min(right, f_to) - max(left, f_from))
                 overlaps.append(ov)
             assigned_overlap = sum(overlaps)
-            usage_pct = assigned_overlap / tot * 100 if tot > 0 else 0
+            usage_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
             usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Usage': usage_pct})
         usage_df = pd.DataFrame(usage_list)
         # Horizontal bar chart by venue-range
@@ -203,7 +204,6 @@ def main_display():
                 x=[row['Usage']],
                 y=[f"{row['Venue']} ({row['Range']})"],
                 orientation='h',
-                name=row['Range'],
                 text=f"{row['Usage']:.1f}%",
                 textposition='outside'
             ))
@@ -219,6 +219,11 @@ def main_display():
         st.plotly_chart(fig2, use_container_width=True)
 
 # Run
+def main():
+    main_display()
+
+if __name__ == "__main__":
+    main_display()
 if __name__ == "__main__":
     main_display()
 if __name__ == "__main__":
