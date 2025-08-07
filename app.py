@@ -138,17 +138,32 @@ def stats_fig(df_all):
     stats = pd.DataFrame({'Status': ['ASSIGNED', 'NOT ASSIGNED'], 'Count': [assigned, not_assigned]})
     color_map = {'ASSIGNED': '#2ECC71', 'NOT ASSIGNED': '#E74C3C'}
     fig = px.pie(
-        stats, names='Status', values='Count',
-        color='Status', hole=0.6,
-        color_discrete_map=color_map, template='plotly'
+        stats,
+        names='Status',
+        values='Count',
+        color='Status',
+        hole=0.6,
+        color_discrete_map=color_map,
+        template='plotly'
     )
+    # Show only percentage in slices, labels in legend
     fig.update_traces(
-        textinfo='percent+label', textfont=dict(size=18),
+        textinfo='percent',
+        textfont=dict(size=18),
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
+    # Position legend above pie and remove title
     fig.update_layout(
-        margin=dict(l=20, r=20, t=0, b=20),
-        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=-0.1, font=dict(size=14)),
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(
+            title='',
+            orientation='h',
+            x=0.5,
+            xanchor='center',
+            y=1.1,
+            yanchor='bottom',
+            font=dict(size=14)
+        ),
         showlegend=True
     )
     return fig
