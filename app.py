@@ -33,6 +33,23 @@ def load_data():
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
 # Load data
+# Custom CSS for sidebar filter boxes
+st.markdown(
+    """
+    <style>
+    /* Light blue background for selectbox and multiselect */
+    .stSidebar .stSelectbox > div[data-baseweb] > div {
+        background-color: #e0f7fa;
+    }
+    .stSidebar .stMultiSelect > div[data-baseweb] > div {
+        background-color: #e0f7fa;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+_df = load_data()
 _df = load_data()
 
 # Sidebar filters (in English)
