@@ -81,8 +81,8 @@ def make_fig(data):
     # Margini
     dx = max((max_x - min_x) * 0.05, 1)
     dy = max(max_y * 0.05, 1)
+
     x_range = (max_x + dx) - (min_x - dx)
-    y_range = max_y + dy
 
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
@@ -106,7 +106,7 @@ def make_fig(data):
                 'Power: %{y} W<extra></extra>'
             )
         ))
-    # Layout dark con griglia tratteggiata bianca e dtick elevato
+    # Layout dark con griglia primaria e secondaria sfocata
     fig.update_layout(
         template='plotly_dark',
         barmode='overlay',
@@ -118,21 +118,30 @@ def make_fig(data):
             range=[min_x - dx, max_x + dx],
             title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
-            gridcolor='#FFFFFF',
+            showgrid=True,
+            gridcolor='rgba(255,255,255,0.5)',
             gridwidth=1,
-            griddash='dash',
-            tickmode='linear',
-            dtick=x_range / 20
+            # Secondary (minor) grid
+            minor=dict(
+                showgrid=True,
+                gridcolor='rgba(255,255,255,0.2)',
+                gridwidth=1
+            ),
+            tickmode='auto'
         ),
         yaxis=dict(
-            range=[0, max_y + dy],
+            range=[0, max_y],
             title=dict(text='<b>Power (W)</b>', font=dict(size=20, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
-            gridcolor='#FFFFFF',
+            showgrid=True,
+            gridcolor='rgba(255,255,255,0.5)',
             gridwidth=1,
-            griddash='dash',
-            tickmode='linear',
-            dtick=y_range / 20
+            minor=dict(
+                showgrid=True,
+                gridcolor='rgba(255,255,255,0.2)',
+                gridwidth=1
+            ),
+            tickmode='auto'
         ),
         legend=dict(font=dict(color='#FFFFFF')),
         margin=dict(l=50, r=50, t=20, b=50)
