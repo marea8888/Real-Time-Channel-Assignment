@@ -168,13 +168,15 @@ def main_display():
     with col1:
         pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
+    
     with col_sep:
         # Vertical separator
         st.markdown(
             "<div style='border-left:2px solid #888; height:100%;'></div>",
             unsafe_allow_html=True
         )
-        with col2:
+    
+    with col2:
         # Usage percentage per venue and frequency range
         cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
         usage_list = []
@@ -183,14 +185,11 @@ def main_display():
             f_from = float(r['Freq. From [MHz]'])
             f_to = float(r['Freq. To [MHz]'])
             tot = float(r['Tot MHz'])
-            # filter assignments for this venue
             assigns = clean[clean[col_venue] == venue]
-            # compute overlap for each assignment
             overlaps = []
             for _, a in assigns.iterrows():
                 left = a['center'] - a['width_mhz']/2
                 right = a['center'] + a['width_mhz']/2
-                # overlap interval
                 ov = max(0, min(right, f_to) - max(left, f_from))
                 overlaps.append(ov)
             assigned_overlap = sum(overlaps)
