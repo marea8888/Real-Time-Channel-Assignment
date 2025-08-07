@@ -145,17 +145,13 @@ def stats_fig(df_all):
         color_discrete_map=color_map,
         template='plotly'
     )
-    # Show percent with absolute in parentheses, white slice borders, auto label position
+    # Show percent with absolute in parentheses, labels outside with connector lines
     fig.update_traces(
-        textinfo='percent',
+        textinfo='percent+value',
         texttemplate='%{percent:.1%} (%{value})',
         textfont=dict(size=18),
-        textposition='outside',  # place labels outside with connector lines
-        pull=[0.1]*len(stats),  # pull slices slightly for emphasis
-        marker=dict(line=dict(color='#FFFFFF', width=2))
-    )',
-        textfont=dict(size=18),
-        textposition='auto',
+        textposition='outside',  # place labels outside
+        pull=[0.1] * len(stats),
         marker=dict(line=dict(color='#FFFFFF', width=2))
     )
     # Legend above pie
@@ -177,6 +173,15 @@ def main_display():
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
     # Display pie chart on the left with space on the right
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        pie = stats_fig(df)
+        st.plotly_chart(pie, use_container_width=True)
+    with col2:
+        st.empty()
+
+# Run display
+main_display() pie chart on the left with space on the right
     col1, col2 = st.columns([1, 2])
     with col1:
         pie = stats_fig(df)
