@@ -210,31 +210,34 @@ def main_display():
     with col1:
         pie = stats_fig(df)
         st.plotly_chart(pie, use_container_width=True)
-    with col2:
-        # Capacity remaining chart
-        # Sum assigned bandwidth per venue
+        with col2:
+        # Usage percentage per venue
+        st.subheader("Usage % per Venue")
+        # Calculate usage percentage
         assigned_bw = clean.groupby(col_venue)['width_mhz'].sum()
-        # Filter capacity for selected venues
         selected_venues = assigned_bw.index.tolist()
         cap = cap_df[cap_df['Venue'].isin(selected_venues)].copy()
         cap['Assigned'] = cap['Venue'].map(assigned_bw).fillna(0)
-        cap['Remaining'] = cap['Tot MHz'] - cap['Assigned']
-        # Horizontal bar chart
+        cap['Usage'] = cap['Assigned'] / cap['Tot MHz'] * 100
+        # Horizontal bar chart of usage percentage
         fig2 = go.Figure(go.Bar(
-            x=cap['Remaining'],
+            x=cap['Usage'],
             y=cap['Venue'],
             orientation='h',
-            marker_color='#1f77b4'
+            marker_color='#1f77b4',
+            text=cap['Usage'].round(1).astype(str) + '%',
+            textposition='outside'
         ))
         fig2.update_layout(
             title='',
-            xaxis_title='Remaining Capacity (MHz)',
+            xaxis_title='Usage (%)',
             yaxis_title='',
-            template='plotly_dark',
-            plot_bgcolor='#111111', paper_bgcolor='#111111', font_color='#FFFFFF',
+            template='plotly',
+            plot_bgcolor='white', paper_bgcolor='white', font_color='black',
             margin=dict(l=50, r=50, t=20, b=50)
         )
         st.plotly_chart(fig2, use_container_width=True)
 
 # Run display
+main_display()
 main_display()
