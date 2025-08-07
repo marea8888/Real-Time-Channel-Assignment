@@ -35,7 +35,7 @@ def load_data():
 _df = load_data()
 df = _df.copy()
 
-# Sidebar selezione
+# Sidebar selezione con memoria tramite session_state
 with st.sidebar:
     # Periodo con icona e senza label della selectbox
     st.header("🗓️ Seleziona Periodo")
@@ -43,51 +43,66 @@ with st.sidebar:
     period_sel = st.selectbox(
         label="",
         options=periods,
-        index=0,
+        index=periods.index(st.session_state.get('period_sel', 'Olympic')),
+        key='period_sel',
         label_visibility="collapsed"
     )
 
     st.markdown("---")
     # Venue con icona e senza label della selectbox
     st.header("📍 Seleziona Venue")
-    df = df[df[col_period] == period_sel]
-    venues = sorted(df[col_venue].dropna().unique().tolist())
+    venues = sorted(_df[_df[col_period] == period_sel][col_venue].dropna().unique().tolist())
     venue_sel = st.selectbox(
         label="",
         options=["All"] + venues,
-        index=0,
+        index=(["All"] + venues).index(st.session_state.get('venue_sel', 'All')),
+        key='venue_sel',
         label_visibility="collapsed"
     )
-    if venue_sel != "All":
-        df = df[df[col_venue] == venue_sel]
 
     st.markdown("---")
     # Service con icona e senza label della selectbox
     st.header("🔧 Seleziona Service")
-    # Colonna 'Service Tri Code'
-    df = df.copy()
-    services = sorted(df['Service Tri Code'].dropna().astype(str).unique().tolist())
+    base_df = _df[(_df[col_period] == period_sel)]
+    if venue_sel != 'All':
+        base_df = base_df[base_df[col_venue] == venue_sel]
+    services = sorted(base_df['Service Tri Code'].dropna().astype(str).unique().tolist())
     service_sel = st.selectbox(
         label="",
         options=["All"] + services,
-        index=0,
+        index=(["All"] + services).index(st.session_state.get('service_sel', 'All')),
+        key='service_sel',
         label_visibility="collapsed"
     )
-    if service_sel != "All":
-        df = df[df['Service Tri Code'].astype(str) == service_sel]
 
     st.markdown("---")
     # Stakeholder con icona e senza label della selectbox
     st.header("👥 Seleziona Stakeholder")
-    stakeholders = sorted(df[col_stake].dropna().unique().tolist())
+    df_base = base_df.copy()
+    if service_sel != 'All':
+        df_base = df_base[df_base['Service Tri Code'].astype(str) == service_sel]
+    stakeholders = sorted(df_base[col_stake].dropna().astype(str).unique().tolist())
     stake_sel = st.selectbox(
         label="",
         options=["All"] + stakeholders,
-        index=0,
+        index=(["All"] + stakeholders).index(st.session_state.get('stake_sel', 'All')),
+        key='stake_sel',
         label_visibility="collapsed"
     )
-    if stake_sel != "All":
-        df = df[df[col_stake] == stake_sel]
+
+# Applica filtri in sequenza
+df = _df.copy()
+# Periodo
+df = df[df[col_period] == st.session_state.period_sel]
+# Venue
+if st.session_state.venue_sel != 'All':
+    df = df[df[col_venue] == st.session_state.venue_sel]
+# Service
+if st.session_state.service_sel != 'All':
+    df = df[df['Service Tri Code'].astype(str) == st.session_state.service_sel]
+# Stakeholder
+if st.session_state.stake_sel != 'All':
+    df = df[df[col_stake] == st.session_state.stake_sel]
 
 # Verifica colonne
 required = {col_bx, col_ao, col_aq, col_request}
