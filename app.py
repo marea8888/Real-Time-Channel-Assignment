@@ -90,7 +90,7 @@ def make_fig(data):
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
     # Barre per stakeholder
-    for i, stake in enumerate(data[col_stake].astype(str).unique()):
+    for i, stake in enumerate(sorted(data[col_stake].astype(str).unique().tolist())):
         grp = data[data[col_stake] == stake]
         fig.add_trace(go.Bar(
             x=grp['center'],
