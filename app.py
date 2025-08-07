@@ -110,14 +110,14 @@ def make_fig(data):
         font_color='#FFFFFF',
         xaxis=dict(
             range=[min_x - dx, max_x + dx],
-            title=dict(text='<b>Frequenza (MHz)</b>', font=dict(size=18, color='#FFFFFF')),
+            title=dict(text='<b>Frequency [MHz]</b>', font=dict(size=18, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
             gridcolor='gray',
             tickmode='auto'
         ),
         yaxis=dict(
             range=[0, max_y + dy],
-            title=dict(text='<b>Potenza (W)</b>', font=dict(size=18, color='#FFFFFF')),
+            title=dict(text='<b>Power [W]</b>', font=dict(size=18, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
             gridcolor='gray',
             tickmode='auto'
