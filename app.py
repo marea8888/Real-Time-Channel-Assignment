@@ -219,12 +219,5 @@ def main_display():
         st.plotly_chart(fig2, use_container_width=True)
 
 # Run
-def main():
-    main_display()
-
-if __name__ == "__main__":
-    main_display()
-if __name__ == "__main__":
-    main_display()
 if __name__ == "__main__":
     main_display()
