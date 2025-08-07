@@ -167,18 +167,9 @@ def main_display():
     # Pre-calc usage data
     assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
     venues_list = assigned_bw.index.tolist()
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])  # usage chart 3/4 width, separator, pie 1/4 width
+    col1, col_sep, col2 = st.columns([3, 0.02, 1])  # capacity chart 3/4 width, separator, pie 1/4 width
     with col1:
-        pie = stats_fig(filtered)
-        st.plotly_chart(pie, use_container_width=True)
-    with col_sep:
-        # Vertical separator
-        st.markdown(
-            "<div style='border-left:2px solid #888; height:100%;'></div>",
-            unsafe_allow_html=True
-        )
-    with col2:
-        # Usage percentage per venue and frequency range
+        # Usage percentage per venue and frequency range (capacity chart)
         cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
         usage_list = []
         for _, r in cap_selected.iterrows():
@@ -217,6 +208,16 @@ def main_display():
             showlegend=False
         )
         st.plotly_chart(fig2, use_container_width=True)
+    with col_sep:
+        # Vertical separator
+        st.markdown(
+            "<div style='border-left:2px solid #888; height:100%;'></div>",
+            unsafe_allow_html=True
+        )
+    with col2:
+        # Display pie chart
+        pie = stats_fig(filtered)
+        st.plotly_chart(pie, use_container_width=True)
 
 # Run
 if __name__ == "__main__":
