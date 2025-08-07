@@ -118,7 +118,7 @@ def make_fig(data):
             tickmode='auto'
         ),
         yaxis=dict(
-            range=[min_y - dy, max_y],
+            range=[min_y - dy, max_y + dy],
             title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFFFFF')),
             tickfont=dict(size=14, color='#FFFFFF'),
             showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
