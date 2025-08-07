@@ -92,7 +92,7 @@ def make_fig(data):
         xaxis=dict(range=[min_x-dx,max_x+dx],title=dict(text='<b>Frequency (MHz)</b>',font=dict(size=20,color='#FFF')),
                    tickfont=dict(size=14,color='#FFF'),showgrid=True,gridcolor='rgba(255,255,255,0.5)',gridwidth=1,
                    minor=dict(showgrid=True,gridcolor='rgba(255,255,255,0.2)',gridwidth=1),tickmode='auto'),
-        yaxis=dict(range=[min_y-dy,max_y+dy],title=dict(text='<b>Power (dBm)</b>',font=dict(size=20,color='#FFF')),
+        yaxis=dict(range=[min_y-dy,max_y],title=dict(text='<b>Power (dBm)</b>',font=dict(size=20,color='#FFF')),
                    tickfont=dict(size=14,color='#FFF'),showgrid=True,gridcolor='rgba(255,255,255,0.5)',gridwidth=1,
                    minor=dict(showgrid=True,gridcolor='rgba(255,255,255,0.2)',gridwidth=1),tickmode='auto'),
         legend=dict(font=dict(color='#FFFFFF')),margin=dict(l=50,r=50,t=20,b=50)
@@ -101,24 +101,43 @@ def make_fig(data):
 
 # Statistiche OK/KO
 def stats_fig(df_all):
-    total=len(df_all); ok=df_all[col_bx].notna().sum(); ko=total-ok
-    stats=pd.DataFrame({'Status':['OK','KO'],'Count':[ok,ko]})
-    fig=px.pie(stats, names='Status', values='Count', color='Status',
-               color_discrete_map={'OK':'#00CC96','KO':'#EF553B'},
-               hole=0.4)
+    total = len(df_all)
+    ok = df_all[col_bx].notna().sum()
+    ko = total - ok
+    stats = pd.DataFrame({'Status': ['OK', 'KO'], 'Count': [ok, ko]})
+    fig = px.pie(
+        stats,
+        names='Status',
+        values='Count',
+        color='Status',
+        color_discrete_map={'OK': '#00CC96', 'KO': '#EF553B'},
+        hole=0.4,
+        template='plotly'
+    )
     fig.update_traces(textinfo='percent+label')
-    fig.update_layout(template='plotly_dark',paper_bgcolor='#111111',plot_bgcolor='#111111',font_color='#FFFFFF')
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        showlegend=False
+    )
     return fig
 
 # Main display
 def main():
-    fig=make_fig(clean)
-    col1,col2=st.columns([3,1])
-    with col1:
-        if fig: st.plotly_chart(fig,use_container_width=True)
-        else: st.info(f"Nessun dato per {st.session_state.period_sel}")
-    with col2:
-        st.subheader("Assegnazioni OK vs KO")
-        st.plotly_chart(stats_fig(df),use_container_width=True)
+    # Grafico principale
+    fig = make_fig(clean)
+    if fig:
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info(f"Nessun dato per {st.session_state.period_sel}")
+    
+    # Statistiche OK vs KO sotto il grafico
+    st.markdown("---")
+    st.subheader("Assegnazioni OK vs KO")
+    stats = stats_fig(df)
+    st.plotly_chart(stats, use_container_width=True)
 
-main()
+# Esegui l'app
+def main_wrapper():
+    main()
+
+main_wrapper()
