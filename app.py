@@ -130,42 +130,39 @@ def make_fig(data):
     return fig
 
 # Pie chart ASSIGNED vs NOT ASSIGNED
-def stats_fig(df_all):
-    total = len(df_all)
-    assigned = df_all[col_bx].notna().sum()
-    not_assigned = total - assigned
-    stats = pd.DataFrame({'Status': ['ASSIGNED', 'NOT ASSIGNED'], 'Count': [assigned, not_assigned]})
-    color_map = {'ASSIGNED': '#2ECC71', 'NOT ASSIGNED': '#E74C3C'}
-    fig = px.pie(
-        stats,
-        names='Status',
-        values='Count',
-        color='Status',
-        hole=0.6,
-        color_discrete_map=color_map,
-        template='plotly'
-    )
-    # Show percent with absolute in parentheses, white slice borders
-    fig.update_traces(
-        textinfo='percent+label',
-        texttemplate='%{percent:.1%} (%{value})',
-        textfont=dict(size=18),
-        textposition='inside',
-        insidetextorientation='horizontal',
-        marker=dict(line=dict(color='#FFFFFF', width=2))
-    )',
-        textfont=dict(size=18),
-        marker=dict(line=dict(color='#FFFFFF', width=2))
-    )
-    # Legend above pie
-    fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20),
-        legend=dict(
-            title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)
-        ),
-        showlegend=True
-    )
-    return fig
+ def stats_fig(df_all):
+     total = len(df_all)
+     assigned = df_all[col_bx].notna().sum()
+     not_assigned = total - assigned
+     stats = pd.DataFrame({'Status': ['ASSIGNED', 'NOT ASSIGNED'], 'Count': [assigned, not_assigned]})
+     color_map = {'ASSIGNED': '#2ECC71', 'NOT ASSIGNED': '#E74C3C'}
+     fig = px.pie(
+         stats,
+         names='Status',
+         values='Count',
+         color='Status',
+         hole=0.6,
+         color_discrete_map=color_map,
+         template='plotly'
+     )
+     # Show percent with absolute in parentheses, white slice borders
+     fig.update_traces(
+         textinfo='percent+label',
+         texttemplate='%{percent:.1%} (%{value})',
+         textfont=dict(size=18),
+         textposition='inside',
+         insidetextorientation='horizontal',
+         marker=dict(line=dict(color='#FFFFFF', width=2))
+     )
+     # Legend above pie
+     fig.update_layout(
+         margin=dict(l=20, r=20, t=20, b=20),
+         legend=dict(
+             title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)
+         ),
+         showlegend=True
+     )
+     return fig
 
 # Display
 def main_display():
