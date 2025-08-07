@@ -35,209 +35,146 @@ def load_data():
 
 @st.cache_data(ttl=60)
 def load_capacity():
-    # Load capacity table
     return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
 
-# Load data
 # Custom CSS for multiselect chips
 st.markdown(
     """
     <style>
     .stSidebar [data-baseweb="tag"] {
         background-color: #e0f7fa !important;
-        color: #000000 !important;
+        color: #000 !important;
         border-radius: 4px !important;
         padding: 2px 6px !important;
         margin: 2px !important;
     }
     .stSidebar [data-baseweb="tag"][role="button"] svg {
-        fill: #000000 !important;
+        fill: #000 !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
+# Load dataframes
 _df = load_data()
 cap_df = load_capacity()
 
-# Sidebar filters (in English)
+# Sidebar filters (English)
 with st.sidebar:
     st.header("🗓️ Select Period")
-    st.selectbox(
-        label="", options=["Olympic", "Paralympic"],
-        key="period_sel", index=0, label_visibility="collapsed"
-    )
+    st.selectbox("", ["Olympic", "Paralympic"], key="period_sel", index=0, label_visibility="collapsed")
     st.markdown("---")
     st.header("👥 Select Stakeholder")
     df_period = _df[_df[col_period] == st.session_state.period_sel]
     stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
-    st.selectbox(
-        label="", options=["All"] + stakeholders,
-        key="stake_sel", index=0, label_visibility="collapsed"
-    )
+    st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
     st.markdown("---")
     st.header("🔧 Select Service")
     df_stake = df_period if st.session_state.stake_sel == "All" else df_period[df_period[col_stake] == st.session_state.stake_sel]
     services = sorted(df_stake[col_service].dropna().astype(str).unique())
-    st.multiselect(
-        label="", options=services,
-        default=services, key="service_sel",
-        label_visibility="collapsed"
-    )
+    st.multiselect("", services, default=services, key="service_sel", label_visibility="collapsed")
     st.markdown("---")
     st.header("📍 Select Venue")
     df_service = df_stake if not st.session_state.service_sel else df_stake[df_stake[col_service].astype(str).isin(st.session_state.service_sel)]
     venues = sorted(df_service[col_venue].dropna().unique())
-    st.multiselect(
-        label="", options=venues,
-        default=venues, key="venue_sel",
-        label_visibility="collapsed"
-    )
+    st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
 # Apply filters
-df = _df[_df[col_period] == st.session_state.period_sel]
+filtered = _df[_df[col_period] == st.session_state.period_sel]
 if st.session_state.venue_sel:
-    df = df[df[col_venue].isin(st.session_state.venue_sel)]
+    filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
 if st.session_state.service_sel:
-    df = df[df[col_service].astype(str).isin(st.session_state.service_sel)]
+    filtered = filtered[filtered[col_service].astype(str).isin(st.session_state.service_sel)]
 if st.session_state.stake_sel != "All":
-    df = df[df[col_stake] == st.session_state.stake_sel]
+    filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
 
-# Ensure necessary columns
+# Ensure columns
 required = {col_bx, col_ao, col_aq, col_request}
-if required - set(df.columns):
-    st.error(f"Missing columns: {required - set(df.columns)}")
+if required - set(filtered.columns):
+    st.error(f"Missing columns: {required - set(filtered.columns)}")
     st.stop()
 
 # Prepare data
-clean = df.dropna(subset=[col_ao, col_aq, col_request]).copy()
+clean = filtered.dropna(subset=[col_ao, col_aq, col_request]).copy()
 clean['center']    = pd.to_numeric(clean[col_bx], errors='coerce')
-clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
+clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000
 clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
 clean['req_id']    = clean[col_request].astype(str)
 
-# Main frequency spectrum plot
+# Main plot
+
 def make_fig(data):
-    if data.empty:
-        return None
-    left = data['center'] - data['width_mhz'] / 2
-    right = data['center'] + data['width_mhz'] / 2
+    if data.empty: return None
+    left = data['center'] - data['width_mhz']/2
+    right = data['center'] + data['width_mhz']/2
     min_x, max_x = left.min(), right.max()
     min_y, max_y = data['power_dBm'].min(), data['power_dBm'].max()
-    dx = max((max_x - min_x) * 0.05, 1)
-    dy = max((max_y - min_y) * 0.05, 1)
-
+    dx = max((max_x-min_x)*0.05,1)
+    dy = max((max_y-min_y)*0.05,1)
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
     for i, stake in enumerate(sorted(data[col_stake].astype(str).unique())):
-        grp = data[data[col_stake] == stake]
+        grp = data[data[col_stake]==stake]
         fig.add_trace(go.Bar(
             x=grp['center'], y=grp['power_dBm'], width=grp['width_mhz'], name=stake,
-            marker_color=palette[i % len(palette)], opacity=0.8,
+            marker_color=palette[i%len(palette)], opacity=0.8,
             marker_line_color='white', marker_line_width=1,
-            customdata=list(zip(grp['req_id'], grp[col_ao])),
-            hovertemplate=(
-                'Request ID: %{customdata[0]}<br>' +
-                'Freq: %{x} MHz<br>' +
-                'Bandwidth: %{customdata[1]} kHz<br>' +
-                'Power: %{y:.1f} dBm<extra></extra>'
-            )
+            customdata=list(zip(grp['req_id'],grp[col_ao])),
+            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Bandwidth: %{customdata[1]} kHz<br>Power: %{y:.1f} dBm<extra></extra>'
         ))
     fig.update_layout(
         template='plotly_dark', barmode='overlay', dragmode='zoom',
-        plot_bgcolor='#111111', paper_bgcolor='#111111', font_color='#FFFFFF',
-        xaxis=dict(
-            range=[min_x - dx, max_x + dx],
-            title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFFFFF')),
-            tickfont=dict(size=14, color='#FFFFFF'),
-            showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
-            minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
-            tickmode='auto'
-        ),
-        yaxis=dict(
-            range=[min_y - dy, max_y + dy],
-            title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFFFFF')),
-            tickfont=dict(size=14, color='#FFFFFF'),
-            showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
-            minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
-            tickmode='auto'
-        ),
-        legend=dict(font=dict(color='#FFFFFF')), margin=dict(l=50, r=50, t=20, b=50)
+        plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
+        xaxis=dict(range=[min_x-dx,max_x+dx],title=dict(text='<b>Frequency (MHz)</b>',font=dict(size=20,color='#FFF')),
+                   tickfont=dict(size=14,color='#FFF'),showgrid=True,gridcolor='rgba(255,255,255,0.5)',gridwidth=1,
+                   minor=dict(showgrid=True,gridcolor='rgba(255,255,255,0.2)',gridwidth=1),tickmode='auto'),
+        yaxis=dict(range=[min_y-dy,max_y+dy],title=dict(text='<b>Power (dBm)</b>',font=dict(size=20,color='#FFF')),
+                   tickfont=dict(size=14,color='#FFF'),showgrid=True,gridcolor='rgba(255,255,255,0.5)',gridwidth=1,
+                   minor=dict(showgrid=True,gridcolor='rgba(255,255,255,0.2)',gridwidth=1),tickmode='auto'),
+        legend=dict(font=dict(color='#FFF')),margin=dict(l=50,r=50,t=20,b=50)
     )
     return fig
 
-# Pie chart ASSIGNED vs NOT ASSIGNED
+# Stats pie
+
 def stats_fig(df_all):
-    total = len(df_all)
-    assigned = df_all[col_bx].notna().sum()
-    not_assigned = total - assigned
-    stats = pd.DataFrame({'Status': ['ASSIGNED', 'NOT ASSIGNED'], 'Count': [assigned, not_assigned]})
-    color_map = {'ASSIGNED': '#2ECC71', 'NOT ASSIGNED': '#E74C3C'}
-    fig = px.pie(
-        stats,
-        names='Status',
-        values='Count',
-        color='Status',
-        hole=0.6,
-        color_discrete_map=color_map,
-        template='plotly'
-    )
-    fig.update_traces(
-        textinfo='percent',
-        texttemplate='%{percent:.1%} (%{value})',
-        textfont=dict(size=18),
-        textposition='outside',
-        pull=[0.1] * len(stats),
-        marker=dict(line=dict(color='#FFFFFF', width=2))
-    )
-    fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20),
-        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
-        showlegend=True
-    )
+    total=len(df_all)
+    ok=df_all[col_bx].notna().sum()
+    ko=total-ok
+    stats=pd.DataFrame({'Status':['ASSIGNED','NOT ASSIGNED'],'Count':[ok,ko]})
+    fig=px.pie(stats,names='Status',values='Count',color='Status',hole=0.6,
+               color_discrete_map={'ASSIGNED':'#2ECC71','NOT ASSIGNED':'#E74C3C'},template='plotly')
+    fig.update_traces(textinfo='percent',texttemplate='%{percent:.1%} (%{value})',
+                      textfont=dict(size=18),textposition='outside',pull=[0.1]*len(stats),
+                      marker=dict(line=dict(color='#FFF',width=2)))
+    fig.update_layout(margin=dict(l=20,r=20,t=20,b=20),
+                      legend=dict(title='',orientation='h',x=0.5,xanchor='center',y=1.2,yanchor='bottom',font=dict(size=14)),
+                      showlegend=True)
     return fig
 
 # Display
+
 def main_display():
-    fig = make_fig(clean)
+    fig=make_fig(clean)
     if fig:
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig,use_container_width=True)
     else:
         st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
-    col1, col2 = st.columns([1, 2])
+    col1,col2=st.columns([1,2])
     with col1:
-        pie = stats_fig(df)
-        st.plotly_chart(pie, use_container_width=True)
-        with col2:
-        # Usage percentage per venue
+        pie=stats_fig(filtered)
+        st.plotly_chart(pie,use_container_width=True)
+    with col2:
         st.subheader("Usage % per Venue")
-        # Calculate usage percentage
-        assigned_bw = clean.groupby(col_venue)['width_mhz'].sum()
-        selected_venues = assigned_bw.index.tolist()
-        cap = cap_df[cap_df['Venue'].isin(selected_venues)].copy()
-        cap['Assigned'] = cap['Venue'].map(assigned_bw).fillna(0)
-        cap['Usage'] = cap['Assigned'] / cap['Tot MHz'] * 100
-        # Horizontal bar chart of usage percentage
-        fig2 = go.Figure(go.Bar(
-            x=cap['Usage'],
-            y=cap['Venue'],
-            orientation='h',
-            marker_color='#1f77b4',
-            text=cap['Usage'].round(1).astype(str) + '%',
-            textposition='outside'
-        ))
-        fig2.update_layout(
-            title='',
-            xaxis_title='Usage (%)',
-            yaxis_title='',
-            template='plotly',
-            plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-            margin=dict(l=50, r=50, t=20, b=50)
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-# Run display
-main_display()
-main_display()
+        assigned_bw=clean.groupby(col_venue)['width_mhz'].sum()
+        venues=assigned_bw.index.tolist()
+        cap=cap_df[cap_df['Venue'].isin(venues)].copy()
+        cap['Assigned']=cap['Venue'].map(assigned_bw).fillna(0)
+        cap['Usage']=cap['Assigned']/cap['Tot MHz']*100
+        fig2=go.Figure(go.Bar(x=cap['Usage'],y=cap['Venue'],orientation='h',
+                              marker_color='#1f77b4',text=cap['Usage'].round(1).astype(str)+'%',
+                              textposition='outside'))
+        fig2.update_layout(xaxis_title='Usage (%)',yaxis_title='',
+                           t
