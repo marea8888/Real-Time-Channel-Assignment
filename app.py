@@ -201,8 +201,24 @@ def main_display():
         usage_df = pd.DataFrame(usage_list)
         # Remove zero-usage entries
         usage_df = usage_df[usage_df['Usage'] > 0]
+        # Build horizontal bar chart with gradient colors
         fig2 = go.Figure()
-        for _, row in usage_df.iterrows():
+        # Compute color for each bar based on Usage%: 0%->green,100%->red
+        colors = []
+        for usage in usage_df['Usage']:
+            r = int(255 * usage / 100)
+            g = int(255 * (1 - usage / 100))
+            colors.append(f'rgb({r},{g},0)')
+        # Add bars
+        for (idx, row), color in zip(usage_df.iterrows(), colors):
+            fig2.add_trace(go.Bar(
+                x=[row['Usage']],
+                y=[f"{row['Venue']} ({row['Range']})"],
+                orientation='h',
+                text=f"{row['Usage']:.1f}%",
+                textposition='outside',
+                marker_color=color
+            ))
             fig2.add_trace(go.Bar(
                 x=[row['Usage']],
                 y=[f"{row['Venue']} ({row['Range']})"],
