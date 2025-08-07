@@ -177,17 +177,15 @@ def main_display():
             f_to = float(r['Freq. To [MHz]'])
             tot = float(r['Tot MHz'])
             assigns = clean[clean[col_venue] == venue]
-            # collect clipped intervals
+            # compute merged overlap length
             overlaps = []
             for _, a in assigns.iterrows():
                 left = a['center'] - a['width_mhz']/2
                 right = a['center'] + a['width_mhz']/2
-                # clip to the capacity range
                 start = max(left, f_from)
                 end = min(right, f_to)
                 if end > start:
                     overlaps.append((start, end))
-            # merge intervals to compute union length
             overlaps_sorted = sorted(overlaps, key=lambda x: x[0])
             merged = []
             for interval in overlaps_sorted:
@@ -196,32 +194,33 @@ def main_display():
                 else:
                     merged[-1][1] = max(merged[-1][1], interval[1])
             assigned_overlap = sum(end - start for start, end in merged)
-            usage_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
-            usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': usage_pct})
+            occupancy_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
+            usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': occupancy_pct})
         usage_df = pd.DataFrame(usage_list)
-        # Remove zero-usage entries
+        # Remove zero-occupancy entries
         usage_df = usage_df[usage_df['Occupancy'] > 0]
+        usage_df = usage_df[usage_df['Usage'] > 0]
         # Build horizontal bar chart with gradient colors
         fig2 = go.Figure()
         # Compute color for each bar based on Usage%: 0%->green,100%->red
         colors = []
-        for usage in usage_df['Occupancy']:
+        for usage in usage_df['Usage']:
             r = int(255 * usage / 100)
             g = int(255 * (1 - usage / 100))
             colors.append(f'rgb({r},{g},0)')
         # Add bars with gradient colors
         for (idx, row), color in zip(usage_df.iterrows(), colors):
             fig2.add_trace(go.Bar(
-                x=[row['Occupancy']],
+                x=[row['Usage']],
                 y=[f"{row['Venue']} ({row['Range']})"],
                 orientation='h',
-                text=f"{row['Occupancy']:.1f}%",
+                text=f"{row['Usage']:.1f}%",
                 textposition='outside',
                 marker_color=color
             ))
         
         fig2.update_layout(
-            xaxis_title='Occupancy (%)',
+            xaxis_title='Usage (%)',
             yaxis_title='',
             template='plotly',
             plot_bgcolor='white', paper_bgcolor='white', font_color='black',
@@ -245,7 +244,7 @@ def main_display():
 
     # List KO assignments under the charts
     st.markdown("---")
-    st.subheader("Failed Assignments")
+    st.subheader("Failed Assignments (KO)")
     # KO entries: those without an attributed frequency
     ko_df = filtered[filtered[col_bx].isna()].copy()
     # Display relevant technical columns
