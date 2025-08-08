@@ -35,32 +35,7 @@ def load_data():
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
-@st.cache_data(ttl=60)
-def load_capacity():
-    return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
-
-# Custom CSS for multiselect chips
-st.markdown(
-    """
-    <style>
-    .stSidebar [data-baseweb="tag"] {
-        background-color: #e0f7fa !important;
-        color: #000 !important;
-        border-radius: 4px !important;
-        padding: 2px 6px !important;
-        margin: 2px !important;
-    }
-    .stSidebar [data-baseweb="tag"][role="button"] svg {
-        fill: #000 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Load dataframes
 _df = load_data()
-cap_df = load_capacity()
 
 # Sidebar filters
 with st.sidebar:
