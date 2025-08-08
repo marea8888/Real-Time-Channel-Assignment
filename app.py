@@ -26,7 +26,8 @@ col_stake   = "Stakeholder ID"
 col_request = "Request ID"
 col_period  = "License Period"
 col_service = "Service Tri Code"
-col_ticket  = "FG"  # <-- NUOVO filtro Ticket (single-select)
+col_ticket  = "FG"
+col_pnrf    = "PNRF"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -61,7 +62,7 @@ st.markdown(
 _df = load_data()
 cap_df = load_capacity()
 
-# Sidebar filters (English)
+# Sidebar filters
 with st.sidebar:
     st.header("🗓️ Select Period")
     st.selectbox("", ["Olympic", "Paralympic"], key="period_sel", index=0, label_visibility="collapsed")
@@ -71,31 +72,22 @@ with st.sidebar:
     df_period = _df[_df[col_period] == st.session_state.period_sel]
     stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
     st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
-
-    # --- NUOVO: filtro Ticket (singola scelta) ---
     st.markdown("---")
+
     st.header("🎫 Select Ticket")
-    df_stake = df_period if st.session_state.stake_sel == "All" else \
-        df_period[df_period[col_stake] == st.session_state.stake_sel]
-    tickets = sorted(df_stake[col_ticket].dropna().astype(str).unique()) if col_ticket in df_stake.columns else []
-    st.selectbox(
-        "", ["All"] + tickets,
-        key="ticket_sel", index=0,
-        label_visibility="collapsed"
-    )
-
+    df_stake = df_period if st.session_state.stake_sel == "All" else df_period[df_period[col_stake] == st.session_state.stake_sel]
+    tickets = sorted(df_stake[col_ticket].dropna().astype(str).unique())
+    st.selectbox("", ["All"] + tickets, key="ticket_sel", index=0, label_visibility="collapsed")
     st.markdown("---")
+
     st.header("🔧 Select Service")
-    # service options derivano da df_ticket (dopo stakeholder+ticket)
-    df_ticket = df_stake if st.session_state.ticket_sel == "All" else \
-        df_stake[df_stake[col_ticket].astype(str) == st.session_state.ticket_sel]
+    df_ticket = df_stake if st.session_state.ticket_sel == "All" else df_stake[df_stake[col_ticket].astype(str) == st.session_state.ticket_sel]
     services = sorted(df_ticket[col_service].dropna().astype(str).unique())
     st.multiselect("", services, default=services, key="service_sel", label_visibility="collapsed")
-
     st.markdown("---")
+
     st.header("📍 Select Venue")
-    df_service = df_ticket if not st.session_state.service_sel else \
-        df_ticket[df_ticket[col_service].astype(str).isin(st.session_state.service_sel)]
+    df_service = df_ticket if not st.session_state.service_sel else df_ticket[df_ticket[col_service].astype(str).isin(st.session_state.service_sel)]
     venues = sorted(df_service[col_venue].dropna().unique())
     st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
@@ -103,180 +95,45 @@ with st.sidebar:
 filtered = _df[_df[col_period] == st.session_state.period_sel]
 if st.session_state.stake_sel != "All":
     filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
-# applica il ticket (single-select)
-if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
+if st.session_state.ticket_sel != "All":
     filtered = filtered[filtered[col_ticket].astype(str) == st.session_state.ticket_sel]
 if st.session_state.service_sel:
     filtered = filtered[filtered[col_service].astype(str).isin(st.session_state.service_sel)]
 if st.session_state.venue_sel:
     filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
 
-# Ensure columns
-required = {col_bx, col_ao, col_aq, col_request}
-if required - set(filtered.columns):
-    st.error(f"Missing columns: {required - set(filtered.columns)}")
-    st.stop()
+# Pie chart calculation
+assigned_count = filtered[col_bx].notna().sum()
+not_assigned_df = filtered[filtered[col_bx].isna()]
+not_assigned_count = len(not_assigned_df)
+mod_coord_count = not_assigned_df[not_assigned_df[col_pnrf] == "MoD"].shape[0]
 
-# Prepare data
-clean = filtered.dropna(subset=[col_ao, col_aq, col_request]).copy()
-clean['center']    = pd.to_numeric(clean[col_bx], errors='coerce')
-clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000
-clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
-clean['req_id']    = clean[col_request].astype(str)
+stats_df = pd.DataFrame({
+    'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
+    'Count': [assigned_count, not_assigned_count - mod_coord_count, mod_coord_count]
+})
 
-# Main plot
-def make_fig(data):
-    if data.empty: return None
-    left = data['center'] - data['width_mhz']/2
-    right = data['center'] + data['width_mhz']/2
-    min_x, max_x = left.min(), right.max()
-    min_y, max_y = data['power_dBm'].min(), data['power_dBm'].max()
-    dx = max((max_x-min_x)*0.05,1)
-    dy = max((max_y-min_y)*0.05,1)
-    fig = go.Figure()
-    palette = px.colors.qualitative.Dark24
-    for i, stake in enumerate(sorted(data[col_stake].astype(str).unique())):
-        grp = data[data[col_stake]==stake]
-        fig.add_trace(go.Bar(
-            x=grp['center'], y=grp['power_dBm'], width=grp['width_mhz'], name=stake,
-            marker_color=palette[i%len(palette)], opacity=0.8,
-            marker_line_color='white', marker_line_width=1,
-            customdata=list(zip(grp['req_id'],grp[col_ao])),
-            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Bandwidth: %{customdata[1]} kHz<br>Power: %{y:.1f} dBm<extra></extra>'
-        ))
-    fig.update_layout(
-        template='plotly_dark', barmode='overlay', dragmode='zoom',
-        plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
-        xaxis=dict(range=[min_x-dx,max_x+dx],title=dict(text='<b>Frequency (MHz)</b>',font=dict(size=20,color='#FFF')),
-                   tickfont=dict(size=14,color='#FFF'),showgrid=True,gridcolor='rgba(255,255,255,0.5)',gridwidth=1,
-                   minor=dict(showgrid=True,gridcolor='rgba(255,255,255,0.2)',gridwidth=1),tickmode='auto'),
-        yaxis=dict(range=[min_y-dy,max_y+dy],title=dict(text='<b>Power (dBm)</b>',font=dict(size=20,color='#FFF')),
-                   tickfont=dict(size=14,color='#FFF'),showgrid=True,gridcolor='rgba(255,255,255,0.5)',gridwidth=1,
-                   minor=dict(showgrid=True,gridcolor='rgba(255,255,255,0.2)',gridwidth=1),tickmode='auto'),
-        legend=dict(font=dict(color='#FFF')),margin=dict(l=50,r=50,t=20,b=50)
-    )
-    return fig
+fig_pie = px.pie(
+    stats_df,
+    names='Status',
+    values='Count',
+    color='Status',
+    color_discrete_map={
+        'ASSIGNED': '#2ECC71',
+        'NOT ASSIGNED': '#E74C3C',
+        'MoD COORDINATION': '#F1C40F'
+    },
+    hole=0.6,
+    template='plotly'
+)
 
-# Stats pie
-def stats_fig(df_all):
-    total=len(df_all)
-    ok=df_all[col_bx].notna().sum()
-    ko=total-ok
-    stats=pd.DataFrame({'Status':['ASSIGNED','NOT ASSIGNED'],'Count':[ok,ko]})
-    fig=px.pie(stats,names='Status',values='Count',color='Status',hole=0.6,
-               color_discrete_map={'ASSIGNED':'#2ECC71','NOT ASSIGNED':'#E74C3C'},template='plotly')
-    fig.update_traces(textinfo='percent',texttemplate='%{percent:.1%} (%{value})',
-                      textfont=dict(size=18),textposition='outside',pull=[0.1]*len(stats),
-                      marker=dict(line=dict(color='#FFF',width=2)))
-    fig.update_layout(margin=dict(l=20,r=20,t=20,b=20),
-                      legend=dict(title='',orientation='h',x=0.5,xanchor='center',y=1.2,yanchor='bottom',font=dict(size=14)),
-                      showlegend=True)
-    return fig
+fig_pie.update_traces(
+    textinfo='percent',
+    texttemplate='%{percent:.1%} (%{value})',
+    textfont=dict(size=18),
+    textposition='outside',
+    pull=[0.1]*len(stats_df),
+    marker=dict(line=dict(color='#FFF', width=2))
+)
 
-# Display
-def main_display():
-    # Frequency spectrum
-    fig = make_fig(clean)
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info(f"No data for {st.session_state.period_sel}")
-    st.markdown("---")
-
-    # Layout: capacity chart 3/4 width, separator, pie chart 1/4 width
-    assigned_bw = clean.groupby(col_venue)["width_mhz"].sum()
-    venues_list = assigned_bw.index.tolist()
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])
-
-    # Capacity chart on the left (3/4)
-    with col1:
-        usage_list = []
-        cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
-        for _, r in cap_selected.iterrows():
-            venue = r['Venue']
-            f_from = float(r['Freq. From [MHz]'])
-            f_to = float(r['Freq. To [MHz]'])
-            tot = float(r['Tot MHz'])
-            assigns = clean[clean[col_venue] == venue]
-            # compute merged overlap length
-            overlaps = []
-            for _, a in assigns.iterrows():
-                left = a['center'] - a['width_mhz']/2
-                right = a['center'] + a['width_mhz']/2
-                start = max(left, f_from)
-                end = min(right, f_to)
-                if end > start:
-                    overlaps.append((start, end))
-            overlaps_sorted = sorted(overlaps, key=lambda x: x[0])
-            merged = []
-            for interval in overlaps_sorted:
-                if not merged or interval[0] > merged[-1][1]:
-                    merged.append(list(interval))
-                else:
-                    merged[-1][1] = max(merged[-1][1], interval[1])
-            assigned_overlap = sum(end - start for start, end in merged)
-            occupancy_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
-            usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': occupancy_pct})
-        usage_df = pd.DataFrame(usage_list)
-        # Remove zero-occupancy entries
-        if 'Occupancy' in usage_df.columns:
-            usage_df = usage_df[usage_df['Occupancy'] > 0]
-        # Build horizontal bar chart with continuous colorbar
-        if usage_df.empty or 'Occupancy' not in usage_df.columns:
-            st.info("No capacity/occupancy data for the current filters.")
-        else:
-            occ_values = usage_df['Occupancy'].astype(float).fillna(0).tolist()
-            labels = [f"{row['Venue']} ({row['Range']})" for _, row in usage_df.iterrows()]
-            fig2 = go.Figure(go.Bar(
-                x=occ_values,
-                y=labels,
-                orientation='h',
-                marker=dict(
-                    color=occ_values,
-                    colorscale='RdYlGn_r',  # green (low) to red (high)
-                    cmin=0,
-                    cmax=100,
-                    colorbar=dict(
-                        title='Occupancy %',
-                        thickness=15,
-                        lenmode='fraction', len=0.75,
-                    )
-                ),
-                text=[f"{v:.1f}%" for v in occ_values],
-                textposition='outside'
-            ))
-            fig2.update_layout(
-                xaxis=dict(visible=False),  # hide x-axis entirely
-                yaxis_title='',
-                template='plotly',
-                plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-                margin=dict(l=100, r=50, t=20, b=50)
-            )
-            st.plotly_chart(fig2, use_container_width=True)
-
-    # Separator
-    with col_sep:
-        st.markdown(
-            """
-            <div style="width:1px; background-color:#888; height:600px; margin:0 auto;"></div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    # Pie chart on the right (1/4)
-    with col2:
-        pie = stats_fig(filtered)
-        st.plotly_chart(pie, use_container_width=True)
-
-    # List KO assignments under the charts
-    st.markdown("---")
-    st.subheader("Failed Assignments")
-    ko_df = filtered[filtered[col_bx].isna()].copy()
-    if ko_df.empty:
-        st.info("No failed assignments for the current filters.")
-    else:
-        st.dataframe(ko_df, use_container_width=True)
-
-# Run
-if __name__ == "__main__":
-    main_display()
+st.plotly_chart(fig_pie, use_container_width=True)
