@@ -56,7 +56,7 @@ st.markdown("""
 _df = load_data()
 cap_df = load_capacity()
 
-# Sidebar
+# Sidebar filters
 with st.sidebar:
     st.header("🗓️ Select Period")
     st.selectbox("", ["Olympic", "Paralympic"], key="period_sel", index=0, label_visibility="collapsed")
@@ -96,6 +96,7 @@ if st.session_state.service_sel:
 if st.session_state.venue_sel:
     filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
 
+# Prepare data
 required = {col_bx, col_ao, col_aq, col_request}
 if required - set(filtered.columns):
     st.error(f"Missing columns: {required - set(filtered.columns)}")
@@ -129,24 +130,51 @@ def make_fig(data):
     fig.update_layout(
         template='plotly_dark', barmode='overlay', dragmode='zoom',
         plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
-        xaxis=dict(range=[min_x - dx, max_x + dx], title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFF'))),
-        yaxis=dict(range=[min_y - dy, max_y + dy], title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
+        xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
+                   title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFF'))),
+        yaxis=dict(range=[min_y - dy, max_y + dy], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
+                   title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
         legend=dict(font=dict(color='#FFF'))
     )
     return fig
 
 def stats_fig(df_all):
+    # Bring back the previous aesthetic and correct logic: MoD separated first
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
-    assigned_count = int(base[col_bx].notna().sum())
+    assigned_count     = int(base[col_bx].notna().sum())
     not_assigned_count = int(base[col_bx].isna().sum())
+
     stats = pd.DataFrame({
         'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count': [assigned_count, not_assigned_count, mod_coord_count]
+        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
     })
-    fig = px.pie(stats, names='Status', values='Count', color='Status', hole=0.6,
-                 color_discrete_map={'ASSIGNED': '#2ECC71', 'NOT ASSIGNED': '#E74C3C', 'MoD COORDINATION': '#F1C40F'})
+
+    fig = px.pie(
+        stats,
+        names='Status', values='Count', color='Status', hole=0.6, template='plotly',
+        color_discrete_map={
+            'ASSIGNED': '#2ECC71',
+            'NOT ASSIGNED': '#E74C3C',
+            'MoD COORDINATION': '#F1C40F'
+        }
+    )
+    fig.update_traces(
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
+        textfont=dict(size=18),
+        textposition='outside',
+        pull=[0.1]*len(stats),
+        marker=dict(line=dict(color='#FFF', width=2))
+    )
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
+        showlegend=True
+    )
     return fig
 
 def build_occupancy_chart(clean_df, cap_df):
@@ -186,9 +214,12 @@ def build_occupancy_chart(clean_df, cap_df):
     occ_values = usage_df['Occupancy'].astype(float).fillna(0).tolist()
     labels = [f"{row['Venue']} ({row['Range']})" for _, row in usage_df.iterrows()]
     fig2 = go.Figure(go.Bar(x=occ_values, y=labels, orientation='h',
-                            marker=dict(color=occ_values, colorscale='RdYlGn_r', cmin=0, cmax=100),
+                            marker=dict(color=occ_values, colorscale='RdYlGn_r', cmin=0, cmax=100,
+                                        colorbar=dict(title='Occupancy %', thickness=15, lenmode='fraction', len=0.75)),
                             text=[f"{v:.1f}%" for v in occ_values], textposition='outside'))
-    fig2.update_layout(xaxis=dict(visible=False))
+    fig2.update_layout(xaxis=dict(visible=False), yaxis_title='', template='plotly',
+                       plot_bgcolor='white', paper_bgcolor='white', font_color='black',
+                       margin=dict(l=100, r=50, t=20, b=50))
     return fig2
 
 def main_display():
