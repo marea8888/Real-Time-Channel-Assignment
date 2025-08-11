@@ -253,7 +253,7 @@ def main_display():
     
     with col1:
         pie = stats_fig(filtered)
-        st.plotly_chart(pie, use_container_width=True)  # Parentesi chiusa correttamente
+        st.plotly_chart(pie, use_container_width=True)
 
     with col_sep:
         st.markdown("<div class='vertical-line'></div>", unsafe_allow_html=True)
