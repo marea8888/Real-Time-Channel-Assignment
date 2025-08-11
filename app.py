@@ -30,7 +30,7 @@ col_ticket  = "FG"
 col_pnrf    = "PNRF"
 col_new_venue = "New venue code for OTH"
 col_new_service = "New service code for OTH"
-col_tmp_output = "TMP Output"  # Colonna per l'analisi delle richieste "NOT ACCEPTED"
+col_tmp_output = "TMP Status"  # Colonna per l'analisi delle richieste "NOT ACCEPTED"
 
 @st.cache_data(ttl=60)
 def load_data():
