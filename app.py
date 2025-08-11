@@ -278,10 +278,10 @@ def main_display():
     else:
         st.info(f"No data for {st.session_state.period_sel}")
 
-    # Second row: Pie chart on the left, TMP Status pie chart on the right
+    # Second row: Pie chart for main status on the left, TMP Status pie chart on the right
     st.markdown("---")
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])
-    
+    col1, col_sep, col2 = st.columns([3, 0.02, 3])  # Larger columns for the pie charts
+
     with col1:
         pie = stats_fig(filtered)[0]
         st.plotly_chart(pie, use_container_width=True)
@@ -292,7 +292,17 @@ def main_display():
             st.plotly_chart(tmp_status_pie, use_container_width=True)
         else:
             st.info("No TMP Status data for NOT ASSIGNED requests.")
-    
+
+    # Optionally, you can add an arrow or line between the two pies
+    st.markdown("""
+    <div style="text-align: center;">
+        <svg width="50" height="50">
+            <line x1="0" y1="25" x2="50" y2="25" style="stroke:#FFFFFF;stroke-width:4" />
+            <polygon points="50,25 45,20 45,30" style="fill:#FFFFFF" />
+        </svg>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Third row: Capacity plot
     st.markdown("---")
     occ_fig = build_occupancy_chart(clean, cap_df)
@@ -309,6 +319,7 @@ def main_display():
         st.info("No failed assignments for the current filters.")
     else:
         st.dataframe(ko_df, use_container_width=True)
+
 
 if __name__ == "__main__":
     main_display()
