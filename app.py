@@ -52,6 +52,11 @@ st.markdown("""
         margin: 2px !important;
     }
     .stSidebar [data-baseweb="tag"][role="button"] svg { fill: #000 !important; }
+    .vertical-line {
+        height: 100%;
+        width: 1px;
+        background-color: #888;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -251,7 +256,7 @@ def main_display():
         st.plotly_chart(pie, use_container_width=True)
 
     with col_sep:
-        pass  # Empty space
+        st.markdown("<div class='vertical-line'></div>", unsafe_allow_html=True)
     
     with col2:
         pass  # Empty space
