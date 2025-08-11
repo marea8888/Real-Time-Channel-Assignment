@@ -13,8 +13,9 @@ st.set_page_config(
 )
 
 # File & columns
-# FILE_ID     = "1YRKlzJAfHfrcfzZyX2GnN35v1eSV4Mg-"
-FILE_ID     = "1TD2YStCrV79DrKz0GODaEpsZtyHb85uH"
+FILE_ID_PREV = "1YRKlzJAfHfrcfzZyX2GnN35v1eSV4Mg-"  # previous version
+FILE_ID_NEW  = "1TD2YStCrV79DrKz0GODaEpsZtyHb85uH"  # new version
+
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
 CAP_SHEET   = "Capacity NP-OLY"
@@ -31,7 +32,7 @@ col_ticket  = "FG"
 col_pnrf    = "PNRF"
 
 @st.cache_data(ttl=60)
-def load_data():
+def load_data(FILE_ID):
     url = f"https://drive.google.com/uc?id={FILE_ID}"
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
@@ -54,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-_df = load_data()
+_df = load_data(FILE_ID_NEW)
 cap_df = load_capacity()
 
 # Sidebar filters
