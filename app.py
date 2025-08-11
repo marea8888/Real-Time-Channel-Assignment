@@ -142,28 +142,17 @@ def make_fig(data):
     )
     return fig
 
-def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new):
-    # MoD separation logic
+def stats_fig(df_all):
+    # Bring back the previous aesthetic and correct logic: MoD separated first
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
-    
-    assigned_count = int(base[col_bx].notna().sum())
+    assigned_count     = int(base[col_bx].notna().sum())
     not_assigned_count = int(base[col_bx].isna().sum())
-
-    # Calculate deltas
-    delta_assigned = assigned_count_new - assigned_count_prev
-    delta_not_assigned = not_assigned_count_new - not_assigned_count_prev
 
     stats = pd.DataFrame({
         'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count': [assigned_count_new, not_assigned_count_new, mod_coord_count],
-        'Delta': [
-            f"+{delta_assigned}" if delta_assigned > 0 else f"{delta_assigned}",
-            f"+{delta_not_assigned}" if delta_not_assigned > 0 else f"{delta_not_assigned}",
-            ""
-        ],
-        'Previous Count': [assigned_count_prev, not_assigned_count_prev, mod_coord_count]  # Previous count for reference
+        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
     })
 
     fig = px.pie(
@@ -175,24 +164,20 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
             'MoD COORDINATION': '#F1C40F'
         }
     )
-
-    # Add text to show count and delta in the pie chart
     fig.update_traces(
-        textinfo='percent+label',
-        texttemplate='%{percent:.1%} (%{value})<br><sup>* %{Delta}</sup>',
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
         textfont=dict(size=18),
         textposition='outside',
         pull=[0.1]*len(stats),
         marker=dict(line=dict(color='#FFF', width=2))
     )
-
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
         legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
         showlegend=True
     )
     return fig
-
 
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
@@ -240,16 +225,11 @@ def build_occupancy_chart(clean_df, cap_df):
     return fig2
 
 def main_display():
-    # Calcola i conteggi per la versione precedente e quella nuova
-    assigned_count_prev = int(filtered_prev[col_bx].notna().sum())
-    assigned_count_new = int(filtered[col_bx].notna().sum())
-    not_assigned_count_prev = int(filtered_prev[col_bx].isna().sum())
-    not_assigned_count_new = int(filtered[col_bx].isna().sum())
-
-    # Chiama la funzione stats_fig con i conteggi corretti
-    pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
-    st.plotly_chart(pie, use_container_width=True)
-
+    fig = make_fig(clean)
+    if fig is not None:
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info(f"No data for {st.session_state.period_sel}")
     st.markdown("---")
     col1, col_sep, col2 = st.columns([3, 0.02, 1])
     with col1:
@@ -261,10 +241,8 @@ def main_display():
     with col_sep:
         st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
     with col2:
-        # Passa i conteggi a stats_fig anche per l'occupancy chart
-        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
+        pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
-    
     st.markdown("---")
     st.subheader("Failed Assignments")
     ko_df = filtered[filtered[col_bx].isna()].copy()
@@ -275,4 +253,3 @@ def main_display():
 
 if __name__ == "__main__":
     main_display()
-
