@@ -130,40 +130,45 @@ assigned_count_new = int(filtered[col_bx].notna().sum())
 delta_assigned = assigned_count_new - assigned_count_prev
 
 # Function to create the pie chart comparing previous and new versions
-def stats_fig(df_all, assigned_count_prev, assigned_count_new, delta_assigned):
+def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new):
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
-    assigned_count     = int(base[col_bx].notna().sum())
-    not_assigned_count = int(base[col_bx].isna().sum())
+    assigned_count = assigned_count_new
+    not_assigned_count = not_assigned_count_new
+
+    # Calcolo del delta per "ASSIGNED" e "NOT ASSIGNED"
+    delta_assigned = assigned_count_new - assigned_count_prev
+    delta_not_assigned = not_assigned_count_new - not_assigned_count_prev
 
     stats = pd.DataFrame({
-        'Status': ['ASSIGNED (Previous)', 'ASSIGNED (New)', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count': [assigned_count_prev, assigned_count_new, not_assigned_count, mod_coord_count]
+        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
+        'Count': [assigned_count, not_assigned_count, mod_coord_count],
+        'Delta': [f"+{delta_assigned}" if delta_assigned > 0 else f"{delta_assigned}", 
+                  f"+{delta_not_assigned}" if delta_not_assigned > 0 else f"{delta_not_assigned}", 
+                  ""]
     })
-
-    # Aggiungi il delta come una nuova colonna
-    stats['Delta'] = stats['Count'] - stats['Count'].shift(1).fillna(0)
 
     fig = px.pie(
         stats,
         names='Status', values='Count', color='Status', hole=0.6, template='plotly',
         color_discrete_map={
-            'ASSIGNED (Previous)': '#3498db',
-            'ASSIGNED (New)': '#2ECC71',
+            'ASSIGNED': '#2ECC71',
             'NOT ASSIGNED': '#E74C3C',
             'MoD COORDINATION': '#F1C40F'
         },
-        title=f"Assigned Frequency Comparison (Delta: {delta_assigned})"
+        title="Assigned Frequency Comparison"
     )
+
     fig.update_traces(
-        textinfo='percent',
-        texttemplate='%{percent:.1%} (%{value})',
+        textinfo='percent+label',
+        texttemplate='%{percent:.1%} (%{value})<br>%{label}: %{Delta}',
         textfont=dict(size=18),
         textposition='outside',
         pull=[0.1]*len(stats),
         marker=dict(line=dict(color='#FFF', width=2))
     )
+    
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
         legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
