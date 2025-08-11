@@ -56,7 +56,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 _df_NEW = load_data(FILE_ID_NEW)
-_df_PREV = load_data(FILE_ID_PREV)
 cap_df = load_capacity()
 
 # Sidebar filters
@@ -88,7 +87,7 @@ with st.sidebar:
     venues = sorted(df_service[col_venue].dropna().unique())
     st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
-# Apply filters for the new data version
+# Apply filters
 filtered = _df_NEW[_df_NEW[col_period] == st.session_state.period_sel]
 if st.session_state.stake_sel != "All":
     filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
@@ -98,17 +97,6 @@ if st.session_state.service_sel:
     filtered = filtered[filtered[col_service].astype(str).isin(st.session_state.service_sel)]
 if st.session_state.venue_sel:
     filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
-
-# Apply filters for the previous data version
-filtered_prev = _df_PREV[_df_PREV[col_period] == st.session_state.period_sel]
-if st.session_state.stake_sel != "All":
-    filtered_prev = filtered_prev[filtered_prev[col_stake] == st.session_state.stake_sel]
-if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
-    filtered_prev = filtered_prev[filtered_prev[col_ticket].astype(str) == st.session_state.ticket_sel]
-if st.session_state.service_sel:
-    filtered_prev = filtered_prev[filtered_prev[col_service].astype(str).isin(st.session_state.service_sel)]
-if st.session_state.venue_sel:
-    filtered_prev = filtered_prev[filtered_prev[col_venue].isin(st.session_state.venue_sel)]
 
 # Prepare data
 required = {col_bx, col_ao, col_aq, col_request}
@@ -122,30 +110,49 @@ clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
 clean['req_id'] = clean[col_request].astype(str)
 
-# Calculate assigned and not assigned counts for both versions
-assigned_count_prev = int(filtered_prev[col_bx].notna().sum())
-assigned_count_new = int(filtered[col_bx].notna().sum())
-not_assigned_count_prev = int(filtered_prev[col_bx].isna().sum())
-not_assigned_count_new = int(filtered[col_bx].isna().sum())
+def make_fig(data):
+    if data.empty: return None
+    left = data['center'] - data['width_mhz']/2
+    right = data['center'] + data['width_mhz']/2
+    min_x, max_x = left.min(), right.max()
+    min_y, max_y = data['power_dBm'].min(), data['power_dBm'].max()
+    dx = max((max_x - min_x) * 0.05, 1)
+    dy = max((max_y - min_y) * 0.05, 1)
+    fig = go.Figure()
+    palette = px.colors.qualitative.Dark24
+    for i, stake in enumerate(sorted(data[col_stake].astype(str).unique())):
+        grp = data[data[col_stake] == stake]
+        fig.add_trace(go.Bar(
+            x=grp['center'], y=grp['power_dBm'], width=grp['width_mhz'], name=stake,
+            marker_color=palette[i % len(palette)], opacity=0.8,
+            marker_line_color='white', marker_line_width=1,
+            customdata=list(zip(grp['req_id'], grp[col_ao])),
+            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Bandwidth: %{customdata[1]} kHz<br>Power: %{y:.1f} dBm<extra></extra>'
+        ))
+    fig.update_layout(
+        template='plotly_dark', barmode='overlay', dragmode='zoom',
+        plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
+        xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
+                   title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFF'))),
+        yaxis=dict(range=[min_y - dy, max_y + dy], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
+                   title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
+        legend=dict(font=dict(color='#FFF'))
+    )
+    return fig
 
-# Function to create the pie chart comparing previous and new versions with delta
-def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new):
+def stats_fig(df_all):
+    # Bring back the previous aesthetic and correct logic: MoD separated first
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
-    
-    # Calculate the delta for "ASSIGNED" and "NOT ASSIGNED"
-    delta_assigned = assigned_count_new - assigned_count_prev
-    delta_not_assigned = not_assigned_count_new - not_assigned_count_prev
+    assigned_count     = int(base[col_bx].notna().sum())
+    not_assigned_count = int(base[col_bx].isna().sum())
 
     stats = pd.DataFrame({
         'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count': [assigned_count_new, not_assigned_count_new, mod_coord_count],
-        'Delta': [
-            f"+{delta_assigned}" if delta_assigned > 0 else f"{delta_assigned}",
-            f"+{delta_not_assigned}" if delta_not_assigned > 0 else f"{delta_not_assigned}",
-            ""
-        ]
+        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
     })
 
     fig = px.pie(
@@ -157,30 +164,19 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
             'MoD COORDINATION': '#F1C40F'
         }
     )
-
-    # Remove the text inside the figure and show only the percentages
     fig.update_traces(
-        textinfo='percent',  # Only show percentages
-        texttemplate='%{percent:.1%}',  # Show percentage only
-        pull=[0.1] * len(stats),  # Add a little space between the slices
-        marker=dict(line=dict(color='#FFF', width=2))  # White borders
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
+        textfont=dict(size=18),
+        textposition='outside',
+        pull=[0.1]*len(stats),
+        marker=dict(line=dict(color='#FFF', width=2))
     )
-
-    # Layout configuration without the title and with the legend
     fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20),  # Remove margins
-        legend=dict(
-            title='',  # No title for the legend
-            orientation='h',  # Horizontal legend
-            x=0.5, xanchor='center',  # Center the legend
-            y=1.1, yanchor='bottom',  # Place the legend above the chart
-            font=dict(size=14)  # Set the font size for the legend
-        ),
-        showlegend=True,  # Show the legend
-        plot_bgcolor='white',  # Set the plot background to white
-        paper_bgcolor='white'  # Set the paper background to white
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
+        showlegend=True
     )
-
     return fig
 
 def build_occupancy_chart(clean_df, cap_df):
@@ -228,45 +224,12 @@ def build_occupancy_chart(clean_df, cap_df):
                        margin=dict(l=100, r=50, t=20, b=50))
     return fig2
 
-def make_fig(data):
-    if data.empty: return None
-    left = data['center'] - data['width_mhz']/2
-    right = data['center'] + data['width_mhz']/2
-    min_x, max_x = left.min(), right.max()
-    min_y, max_y = data['power_dBm'].min(), data['power_dBm'].max()
-    dx = max((max_x - min_x) * 0.05, 1)
-    dy = max((max_y - min_y) * 0.05, 1)
-    fig = go.Figure()
-    palette = px.colors.qualitative.Dark24
-    for i, stake in enumerate(sorted(data[col_stake].astype(str).unique())):
-        grp = data[data[col_stake] == stake]
-        fig.add_trace(go.Bar(
-            x=grp['center'], y=grp['power_dBm'], width=grp['width_mhz'], name=stake,
-            marker_color=palette[i % len(palette)], opacity=0.8,
-            marker_line_color='white', marker_line_width=1,
-            customdata=list(zip(grp['req_id'], grp[col_ao])),
-            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Bandwidth: %{customdata[1]} kHz<br>Power: %{y:.1f} dBm<extra></extra>'
-        ))
-    fig.update_layout(
-        template='plotly_dark', barmode='overlay', dragmode='zoom',
-        plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
-        xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
-                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
-                   title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFF'))),
-        yaxis=dict(range=[min_y - dy, max_y + dy], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
-                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
-                   title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
-        legend=dict(font=dict(color='#FFF'))
-    )
-    return fig
-
 def main_display():
     fig = make_fig(clean)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info(f"No data for {st.session_state.period_sel}")
-    
     st.markdown("---")
     col1, col_sep, col2 = st.columns([3, 0.02, 1])
     with col1:
@@ -278,8 +241,15 @@ def main_display():
     with col_sep:
         st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
     with col2:
-        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
+        pie = stats_fig(filtered)
         st.plotly_chart(pie, use_container_width=True)
+    st.markdown("---")
+    st.subheader("Failed Assignments")
+    ko_df = filtered[filtered[col_bx].isna()].copy()
+    if ko_df.empty:
+        st.info("No failed assignments for the current filters.")
+    else:
+        st.dataframe(ko_df, use_container_width=True)
 
 if __name__ == "__main__":
     main_display()
