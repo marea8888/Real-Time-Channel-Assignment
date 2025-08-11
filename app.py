@@ -29,6 +29,8 @@ col_period  = "License Period"
 col_service = "Service Tri Code"
 col_ticket  = "FG"
 col_pnrf    = "PNRF"
+col_new_venue = "New venue code for OTH"
+col_new_service = "New service code for OTH"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -56,6 +58,17 @@ st.markdown("""
 
 _df = load_data()
 cap_df = load_capacity()
+
+# Step 1: Replace "OTH" values in "Venue Code" and "Service Tri Code" with their respective new values
+_df[col_venue] = _df.apply(
+    lambda row: row[col_new_venue] if row[col_venue] == "OTH" else row[col_venue],
+    axis=1
+)
+
+_df[col_service] = _df.apply(
+    lambda row: row[col_new_service] if row[col_service] == "OTH" else row[col_service],
+    axis=1
+)
 
 # Sidebar filters
 with st.sidebar:
