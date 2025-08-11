@@ -30,6 +30,7 @@ col_ticket  = "FG"
 col_pnrf    = "PNRF"
 col_new_venue = "New venue code for OTH"
 col_new_service = "New service code for OTH"
+col_tmp_status = "TMP Status"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -126,6 +127,7 @@ clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
 clean['req_id'] = clean[col_request].astype(str)
 
+# Funzione per il diagramma dello spettro
 def make_fig(data):
     if data.empty: return None
     left = data['center'] - data['width_mhz']/2
@@ -158,86 +160,22 @@ def make_fig(data):
     )
     return fig
 
-def stats_fig(df_all):
-    is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
-    mod_coord_count = int(is_mod.sum())
-    base = df_all.loc[~is_mod]
-    assigned_count     = int(base[col_bx].notna().sum())
-    not_assigned_count = int(base[col_bx].isna().sum())
-
-    stats = pd.DataFrame({
-        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
-    })
-
-    fig = px.pie(
-        stats,
-        names='Status', values='Count', color='Status', hole=0.6, template='plotly',
-        color_discrete_map={
-            'ASSIGNED': '#2ECC71',
-            'NOT ASSIGNED': '#E74C3C',
-            'MoD COORDINATION': '#F1C40F'
-        }
-    )
-    fig.update_traces(
-        textinfo='percent',
-        texttemplate='%{percent:.1%} (%{value})',
-        textfont=dict(size=18),
-        textposition='outside',
-        pull=[0.1]*len(stats),
-        marker=dict(line=dict(color='#FFF', width=2))
-    )
+# Funzione per il diagramma a torta dei "NOT ASSIGNED" con TMP Status
+def not_assigned_status_pie(data):
+    # Filtra solo i record "NOT ASSIGNED"
+    not_assigned = data[data[col_bx].isna() & ~data[col_pnrf].str.strip().eq("MoD")]
+    
+    # Calcola la frequenza di ciascun valore nella colonna "TMP Status"
+    status_counts = not_assigned[col_tmp_status].value_counts()
+    
+    # Crea il diagramma a torta
+    fig = go.Figure(data=[go.Pie(labels=status_counts.index, values=status_counts.values)])
     fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20),
-        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
-        showlegend=True
+        title="Analysis of 'NOT ASSIGNED' Status",
+        template='plotly_dark',
+        margin=dict(l=20, r=20, t=40, b=40)
     )
     return fig
-
-def build_occupancy_chart(clean_df, cap_df):
-    assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
-    venues_list = assigned_bw.index.tolist()
-    usage_list = []
-    cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
-    for _, r in cap_selected.iterrows():
-        venue = r['Venue']
-        f_from = float(r['Freq. From [MHz]'])
-        f_to = float(r['Freq. To [MHz]'])
-        tot = float(r['Tot MHz'])
-        assigns = clean_df[clean_df[col_venue] == venue]
-        overlaps = []
-        for _, a in assigns.iterrows():
-            left = a['center'] - a['width_mhz']/2
-            right = a['center'] + a['width_mhz']/2
-            start = max(left, f_from)
-            end = min(right, f_to)
-            if end > start:
-                overlaps.append((start, end))
-        overlaps_sorted = sorted(overlaps, key=lambda x: x[0])
-        merged = []
-        for interval in overlaps_sorted:
-            if not merged or interval[0] > merged[-1][1]:
-                merged.append(list(interval))
-            else:
-                merged[-1][1] = max(merged[-1][1], interval[1])
-        assigned_overlap = sum(end - start for start, end in merged)
-        occupancy_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
-        usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': occupancy_pct})
-    usage_df = pd.DataFrame(usage_list)
-    if not usage_df.empty and 'Occupancy' in usage_df.columns:
-        usage_df = usage_df[usage_df['Occupancy'] > 0]
-    if usage_df.empty:
-        return None
-    occ_values = usage_df['Occupancy'].astype(float).fillna(0).tolist()
-    labels = [f"{row['Venue']} ({row['Range']})" for _, row in usage_df.iterrows()]
-    fig2 = go.Figure(go.Bar(x=occ_values, y=labels, orientation='h',
-                            marker=dict(color=occ_values, colorscale='RdYlGn_r', cmin=0, cmax=100,
-                                        colorbar=dict(title='Occupancy %', thickness=15, lenmode='fraction', len=0.75)),
-                            text=[f"{v:.1f}%" for v in occ_values], textposition='outside'))
-    fig2.update_layout(xaxis=dict(visible=False), yaxis_title='', template='plotly',
-                       plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-                       margin=dict(l=100, r=50, t=20, b=50))
-    return fig2
 
 def main_display():
     # First row: Spectrum plot
@@ -249,7 +187,7 @@ def main_display():
 
     # Second row: Pie chart on the left, empty column on the right
     st.markdown("---")
-    col1, col_sep, col2 = st.columns([5, 0.02, 1])  # Aumentato spazio per il diagramma a torta
+    col1, col_sep, col2 = st.columns([5, 0.02, 1])
     
     with col1:
         pie = stats_fig(filtered)
@@ -259,8 +197,10 @@ def main_display():
         st.markdown("<div class='vertical-line'></div>", unsafe_allow_html=True)
     
     with col2:
-        pass  # Empty space
-    
+        # Second pie chart analyzing 'NOT ASSIGNED' TMP Status
+        pie_not_assigned = not_assigned_status_pie(filtered)
+        st.plotly_chart(pie_not_assigned, use_container_width=True)
+
     # Third row: Capacity plot
     st.markdown("---")
     occ_fig = build_occupancy_chart(clean, cap_df)
