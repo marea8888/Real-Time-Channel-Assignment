@@ -187,7 +187,36 @@ def stats_fig(df_all):
         legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
         showlegend=True
     )
-    return fig
+
+    # Second pie chart for TMP Status of NOT ASSIGNED
+    not_assigned_df = df_all[df_all[col_bx].isna()]
+    if not not_assigned_df.empty and 'TMP Status' in not_assigned_df.columns:
+        tmp_status_counts = not_assigned_df['TMP Status'].value_counts()
+        tmp_status_stats = pd.DataFrame({
+            'Status': tmp_status_counts.index,
+            'Count': tmp_status_counts.values
+        })
+
+        tmp_status_fig = px.pie(
+            tmp_status_stats,
+            names='Status', values='Count', hole=0.6, template='plotly',
+            color_discrete_map={status: f'#{i:02x}{i:02x}{i:02x}' for i, status in enumerate(tmp_status_stats['Status'].unique())}
+        )
+        tmp_status_fig.update_traces(
+            textinfo='percent',
+            texttemplate='%{percent:.1%} (%{value})',
+            textfont=dict(size=18),
+            textposition='outside',
+            marker=dict(line=dict(color='#FFF', width=2))
+        )
+        tmp_status_fig.update_layout(
+            margin=dict(l=20, r=20, t=20, b=20),
+            legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
+            showlegend=True
+        )
+
+    return fig, tmp_status_fig
+
 
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
@@ -242,19 +271,20 @@ def main_display():
     else:
         st.info(f"No data for {st.session_state.period_sel}")
 
-    # Second row: Pie chart on the left, empty column on the right
+    # Second row: Pie chart on the left, TMP Status pie chart on the right
     st.markdown("---")
     col1, col_sep, col2 = st.columns([3, 0.02, 1])
     
     with col1:
-        pie = stats_fig(filtered)
+        pie = stats_fig(filtered)[0]
         st.plotly_chart(pie, use_container_width=True)
 
-    with col_sep:
-        pass  # Empty space
-    
     with col2:
-        pass  # Empty space
+        tmp_status_pie = stats_fig(filtered)[1]
+        if tmp_status_pie is not None:
+            st.plotly_chart(tmp_status_pie, use_container_width=True)
+        else:
+            st.info("No TMP Status data for NOT ASSIGNED requests.")
     
     # Third row: Capacity plot
     st.markdown("---")
