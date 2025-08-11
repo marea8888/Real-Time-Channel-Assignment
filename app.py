@@ -154,11 +154,16 @@ def make_fig(data):
     return fig
 
 def stats_fig(df_all):
+    # Filtraggio delle righe "NOT ASSIGNED" per il diagramma principale
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
+    
+    # Righe "NOT ASSIGNED" per il diagramma principale
+    not_assigned_base = base[base[col_bx].isna()]
+    
     assigned_count     = int(base[col_bx].notna().sum())
-    not_assigned_count = int(base[col_bx].isna().sum())
+    not_assigned_count = int(not_assigned_base[col_bx].isna().sum())
 
     stats = pd.DataFrame({
         'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
@@ -189,13 +194,12 @@ def stats_fig(df_all):
     )
 
     # Second pie chart for TMP Status of NOT ASSIGNED
-    not_assigned_df = df_all[df_all[col_bx].isna()]
-    if not not_assigned_df.empty and 'TMP Status' in not_assigned_df.columns:
-        # Replace NaN values with "Not Analysed"
-        not_assigned_df['TMP Status'] = not_assigned_df['TMP Status'].fillna('Not Analysed')
+    if not not_assigned_base.empty and 'TMP Status' in not_assigned_base.columns:
+        # Sostituire i NaN con "Not Analysed" per il TMP Status
+        not_assigned_base['TMP Status'] = not_assigned_base['TMP Status'].fillna('Not Analysed')
         
-        # Count occurrences of TMP Status
-        tmp_status_counts = not_assigned_df['TMP Status'].value_counts()
+        # Calcolare la frequenza delle voci in TMP Status per le righe "NOT ASSIGNED"
+        tmp_status_counts = not_assigned_base['TMP Status'].value_counts()
         tmp_status_stats = pd.DataFrame({
             'Status': tmp_status_counts.index,
             'Count': tmp_status_counts.values
@@ -220,8 +224,6 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
-
-
 
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
