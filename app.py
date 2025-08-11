@@ -146,7 +146,7 @@ def make_fig(data):
         xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
                    minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
                    title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFF'))),
-        yaxis=dict(range=[min_y - dy, max_y], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+        yaxis=dict(range=[min_y, max_y], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
                    minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
                    title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
         legend=dict(font=dict(color='#FFF'))
