@@ -249,34 +249,8 @@ def main_display():
 
     # Second row: Pie chart on the left, empty column on the right
     st.markdown("---")
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])
+    col1, col_sep, col2 = st.columns([5, 0.02, 1])  # Aumentato spazio per il diagramma a torta
     
     with col1:
         pie = stats_fig(filtered)
-        st.plotly_chart(pie, use_container_width=True)
-
-    with col_sep:
-        st.markdown("<div class='vertical-line'></div>", unsafe_allow_html=True)
-    
-    with col2:
-        pass  # Empty space
-    
-    # Third row: Capacity plot
-    st.markdown("---")
-    occ_fig = build_occupancy_chart(clean, cap_df)
-    if occ_fig is None:
-        st.info("No capacity/occupancy data for the current filters.")
-    else:
-        st.plotly_chart(occ_fig, use_container_width=True)
-
-    # Fourth row: KO table
-    st.markdown("---")
-    st.subheader("Failed Assignments")
-    ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
-    if ko_df.empty:
-        st.info("No failed assignments for the current filters.")
-    else:
-        st.dataframe(ko_df, use_container_width=True)
-
-if __name__ == "__main__":
-    main_display()
+        st.plotly_chart(pie, use_container_wi_
