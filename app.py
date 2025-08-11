@@ -30,7 +30,7 @@ col_ticket  = "FG"
 col_pnrf    = "PNRF"
 col_new_venue = "New venue code for OTH"
 col_new_service = "New service code for OTH"
-col_tmp_output = "TMP Status" 
+col_tmp_output = "TMP Output"  # Colonna per l'analisi delle richieste "NOT ACCEPTED"
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -60,6 +60,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Carica i dati da Google Drive
 _df = load_data()
 cap_df = load_capacity()
 
@@ -113,6 +114,11 @@ if service_sel:
     filtered = filtered[filtered[col_service].astype(str).isin(service_sel)]
 if venue_sel:
     filtered = filtered[filtered[col_venue].isin(venue_sel)]
+
+# Verifica che i dati siano stati correttamente filtrati
+if filtered.empty:
+    st.error("No data available after filtering. Please adjust your filters.")
+    st.stop()
 
 # Prepare data
 required = {col_bx, col_ao, col_aq, col_request}
@@ -226,11 +232,14 @@ def main_display():
 
     # Third row: Capacity plot
     st.markdown("---")
-    occ_fig = build_occupancy_chart(clean, cap_df)
-    if occ_fig is None:
-        st.info("No capacity/occupancy data for the current filters.")
+    if cap_df.empty:
+        st.error("Capacity data is missing or empty.")
     else:
-        st.plotly_chart(occ_fig, use_container_width=True)
+        occ_fig = build_occupancy_chart(clean, cap_df)
+        if occ_fig is None:
+            st.info("No capacity/occupancy data for the current filters.")
+        else:
+            st.plotly_chart(occ_fig, use_container_width=True)
 
     # Fourth row: KO table
     st.markdown("---")
