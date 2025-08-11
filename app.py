@@ -205,10 +205,19 @@ def stats_fig(df_all):
             'Count': tmp_status_counts.values
         })
 
+        # Mappa dei colori personalizzati
+        color_map = {
+            'No Spectrum within the requested range': '#8B0000',  # Rosso scuro
+            'To Be Investigated': '#FFCCCC',  # Rosso chiarissimo
+            'Contact stakeholder': '#FFA500',  # Arancione
+            'Not Analysed': '#D3D3D3',  # Grigio chiaro
+        }
+
         tmp_status_fig = px.pie(
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
-            color_discrete_map={status: f'#{i:02x}{i:02x}{i:02x}' for i, status in enumerate(tmp_status_stats['Status'].unique())}
+            color='Status', 
+            color_discrete_map=color_map  # Applica la mappa colori personalizzata
         )
         tmp_status_fig.update_traces(
             textinfo='percent',
@@ -224,7 +233,7 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
-
+    
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
     venues_list = assigned_bw.index.tolist()
