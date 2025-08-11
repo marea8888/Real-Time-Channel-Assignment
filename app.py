@@ -240,11 +240,16 @@ def build_occupancy_chart(clean_df, cap_df):
     return fig2
 
 def main_display():
-    fig = make_fig(clean)
-    if fig is not None:
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info(f"No data for {st.session_state.period_sel}")
+    # Calcola i conteggi per la versione precedente e quella nuova
+    assigned_count_prev = int(filtered_prev[col_bx].notna().sum())
+    assigned_count_new = int(filtered[col_bx].notna().sum())
+    not_assigned_count_prev = int(filtered_prev[col_bx].isna().sum())
+    not_assigned_count_new = int(filtered[col_bx].isna().sum())
+
+    # Chiama la funzione stats_fig con i conteggi corretti
+    pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
+    st.plotly_chart(pie, use_container_width=True)
+
     st.markdown("---")
     col1, col_sep, col2 = st.columns([3, 0.02, 1])
     with col1:
@@ -256,8 +261,10 @@ def main_display():
     with col_sep:
         st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
     with col2:
-        pie = stats_fig(filtered)
+        # Passa i conteggi a stats_fig anche per l'occupancy chart
+        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
         st.plotly_chart(pie, use_container_width=True)
+    
     st.markdown("---")
     st.subheader("Failed Assignments")
     ko_df = filtered[filtered[col_bx].isna()].copy()
@@ -268,3 +275,4 @@ def main_display():
 
 if __name__ == "__main__":
     main_display()
+
