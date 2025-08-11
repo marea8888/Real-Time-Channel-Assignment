@@ -232,7 +232,21 @@ def stats_fig(df_all):
             showlegend=True
         )
 
+    # Aggiungi una freccia tra le legende
+    fig.add_annotation(
+        x=0.5, y=1.15,  # Posizione della freccia sulla prima torta
+        ax=0.5, ay=1.3,  # Posizione della freccia sulla seconda torta
+        xref="paper", yref="paper",
+        axref="paper", ayref="paper",
+        showarrow=True,
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor='red'
+    )
+
     return fig, tmp_status_fig
+
     
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
