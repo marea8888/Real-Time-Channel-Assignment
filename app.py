@@ -159,6 +159,7 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
         title="Assigned Frequency Comparison"
     )
 
+    # Adjust the layout for better visualization and keep the delta as a separate label
     fig.update_traces(
         textinfo='percent+label',
         texttemplate='%{percent:.1%} (%{value})<br>%{label}: %{Delta}',
@@ -167,11 +168,12 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
         pull=[0.1]*len(stats),
         marker=dict(line=dict(color='#FFF', width=2))
     )
-    
+
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
         legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
-        showlegend=True
+        showlegend=True,
+        title_x=0.5  # Center the title
     )
     return fig
 
