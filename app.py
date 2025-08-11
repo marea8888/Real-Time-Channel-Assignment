@@ -177,6 +177,43 @@ def not_assigned_status_pie(data):
     )
     return fig
 
+# Funzione di analisi
+def stats_fig(df_all):
+    is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
+    mod_coord_count = int(is_mod.sum())
+    base = df_all.loc[~is_mod]
+    assigned_count     = int(base[col_bx].notna().sum())
+    not_assigned_count = int(base[col_bx].isna().sum())
+
+    stats = pd.DataFrame({
+        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
+        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
+    })
+
+    fig = px.pie(
+        stats,
+        names='Status', values='Count', color='Status', hole=0.6, template='plotly',
+        color_discrete_map={
+            'ASSIGNED': '#2ECC71',
+            'NOT ASSIGNED': '#E74C3C',
+            'MoD COORDINATION': '#F1C40F'
+        }
+    )
+    fig.update_traces(
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
+        textfont=dict(size=18),
+        textposition='outside',
+        pull=[0.1]*len(stats),
+        marker=dict(line=dict(color='#FFF', width=2))
+    )
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
+        showlegend=True
+    )
+    return fig
+
 def main_display():
     # First row: Spectrum plot
     fig = make_fig(clean)
