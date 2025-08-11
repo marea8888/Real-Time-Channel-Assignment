@@ -13,9 +13,8 @@ st.set_page_config(
 )
 
 # File & columns
-FILE_ID_PREV = "1YRKlzJAfHfrcfzZyX2GnN35v1eSV4Mg-"  # previous version
-FILE_ID_NEW  = "1TD2YStCrV79DrKz0GODaEpsZtyHb85uH"  # new version
-
+# FILE_ID     = "1YRKlzJAfHfrcfzZyX2GnN35v1eSV4Mg-"
+FILE_ID     = "1TD2YStCrV79DrKz0GODaEpsZtyHb85uH"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
 CAP_SHEET   = "Capacity NP-OLY"
@@ -32,7 +31,7 @@ col_ticket  = "FG"
 col_pnrf    = "PNRF"
 
 @st.cache_data(ttl=60)
-def load_data(FILE_ID):
+def load_data():
     url = f"https://drive.google.com/uc?id={FILE_ID}"
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
@@ -55,7 +54,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-_df_NEW = load_data(FILE_ID_NEW)
+_df = load_data()
 cap_df = load_capacity()
 
 # Sidebar filters
@@ -65,7 +64,7 @@ with st.sidebar:
     st.markdown("---")
 
     st.header("👥 Select Stakeholder")
-    df_period = _df_NEW[_df_NEW[col_period] == st.session_state.period_sel]
+    df_period = _df[_df[col_period] == st.session_state.period_sel]
     stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
     st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
 
@@ -88,7 +87,7 @@ with st.sidebar:
     st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
 # Apply filters
-filtered = _df_NEW[_df_NEW[col_period] == st.session_state.period_sel]
+filtered = _df[_df[col_period] == st.session_state.period_sel]
 if st.session_state.stake_sel != "All":
     filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
 if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
