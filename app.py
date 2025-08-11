@@ -315,11 +315,9 @@ def main_display():
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <div style="text-align: center; color: white; font-size: 18px; margin-top: -20px;">
+    st.markdown("""<div style="text-align: center; color: white; font-size: 18px; margin-top: -20px;">
         <strong>Analysis of "NOT ASSIGNED" Requests</strong>
-    </div>
-    """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
 
     # Third row: Capacity plot
     st.markdown("---")
@@ -332,11 +330,22 @@ def main_display():
     # Fourth row: KO table
     st.markdown("---")
     st.subheader("Failed Assignments")
+
+    # Add a dropdown for filtering by TMP Status
+    tmp_status_options = ['All', 'No Spectrum within the requested range', 'To Be Investigated', 'Contact stakeholder', 'Not Analysed']
+    selected_status = st.selectbox("Filter by TMP Status", tmp_status_options)
+
+    # Filter KO table based on TMP Status
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
+
+    if selected_status != 'All':
+        ko_df = ko_df[ko_df['TMP Status'] == selected_status]
+
     if ko_df.empty:
         st.info("No failed assignments for the current filters.")
     else:
         st.dataframe(ko_df, use_container_width=True)
+
 
 
 if __name__ == "__main__":
