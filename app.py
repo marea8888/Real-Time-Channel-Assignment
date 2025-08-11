@@ -228,23 +228,6 @@ def build_occupancy_chart(clean_df, cap_df):
                        margin=dict(l=100, r=50, t=20, b=50))
     return fig2
 
-def main_display():
-    fig = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.markdown("---")
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])
-    with col1:
-        occ_fig = build_occupancy_chart(clean, cap_df)
-        if occ_fig is None:
-            st.info("No capacity/occupancy data for the current filters.")
-        else:
-            st.plotly_chart(occ_fig, use_container_width=True)
-    with col_sep:
-        st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
-    with col2:
-        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
-        st.plotly_chart(pie, use_container_width=True)
-
-if __name__ == "__main__":
-    main_display()
+def make_fig(data):
+    if data.empty: return None
+    left = data['center'] - data['width_mhz']/2
