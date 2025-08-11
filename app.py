@@ -5,17 +5,6 @@ import gdown
 import plotly.graph_objects as go
 import plotly.express as px
 
-st.markdown("""
-    <style>
-    .stApp {
-        background-image: url('https://drive.google.com/uc?id=16NO9SQgQ-UqEefx_otLXYFkxu8LhvzTQ');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # Page config
 st.set_page_config(
     page_title="Realtime Frequency Plot",
@@ -52,33 +41,20 @@ def load_data():
 def load_capacity():
     return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
 
-# Custom CSS
-st.markdown("""
+# Carica l'immagine per la sezione dei filtri
+st.sidebar.markdown("""
     <style>
-    .stSidebar [data-baseweb="tag"] {
-        background-color: #e0f7fa !important;
-        color: #000 !important;
-        border-radius: 4px !important;
-        padding: 2px 6px !important;
-        margin: 2px !important;
+    .sidebar-image {
+        width: 100%;  /* Adatta l'immagine alla larghezza della sidebar */
+        height: auto;  /* Mantiene le proporzioni */
     }
-    .stSidebar [data-baseweb="tag"][role="button"] svg { fill: #000 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-_df = load_data()
-cap_df = load_capacity()
-
-# Step 1: Replace "OTH" values in "Venue Code" and "Service Tri Code" with their respective new values
-_df[col_venue] = _df.apply(
-    lambda row: row[col_new_venue] if row[col_venue] == "OTH" else row[col_venue],
-    axis=1
-)
-
-_df[col_service] = _df.apply(
-    lambda row: row[col_new_service] if row[col_service] == "OTH" else row[col_service],
-    axis=1
-)
+# Usa il link diretto dell'immagine su Google Drive
+st.sidebar.markdown("""
+    <img src="https://drive.google.com/uc?id=1LKh0tEavhJ1aZsbzyXDmNiu8tRbF0JUt" class="sidebar-image">
+""", unsafe_allow_html=True)
 
 # Sidebar filters
 with st.sidebar:
@@ -247,6 +223,7 @@ def build_occupancy_chart(clean_df, cap_df):
 
 def main_display():
     # First row: Spectrum plot
+    st.subheader("Spectrum Plot")
     fig = make_fig(clean)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
