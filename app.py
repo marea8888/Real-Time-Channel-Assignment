@@ -236,7 +236,6 @@ def build_occupancy_chart(clean_df, cap_df):
 
 def main_display():
     # First row: Spectrum plot
-    st.subheader("Spectrum Plot")
     fig = make_fig(clean)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
