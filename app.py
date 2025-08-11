@@ -72,42 +72,42 @@ _df[col_service] = _df.apply(
 # Sidebar filters
 with st.sidebar:
     st.header("🗓️ Select Period")
-    st.selectbox("", ["Olympic", "Paralympic"], key="period_sel", index=0, label_visibility="collapsed")
+    period_sel = st.selectbox("", ["Olympic", "Paralympic"], key="period_sel", index=0, label_visibility="collapsed")
     st.markdown("---")
 
     st.header("👥 Select Stakeholder")
-    df_period = _df[_df[col_period] == st.session_state.period_sel]
+    df_period = _df[_df[col_period] == period_sel]
     stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
-    st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
+    stake_sel = st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
 
     st.markdown("---")
     st.header("🎫 Select Ticket")
-    df_stake = df_period if st.session_state.stake_sel == "All" else df_period[df_period[col_stake] == st.session_state.stake_sel]
+    df_stake = df_period if stake_sel == "All" else df_period[df_period[col_stake] == stake_sel]
     tickets = sorted(df_stake[col_ticket].dropna().astype(str).unique()) if col_ticket in df_stake.columns else []
-    st.selectbox("", ["All"] + tickets, key="ticket_sel", index=0, label_visibility="collapsed")
+    ticket_sel = st.selectbox("", ["All"] + tickets, key="ticket_sel", index=0, label_visibility="collapsed")
 
     st.markdown("---")
     st.header("🔧 Select Service")
-    df_ticket = df_stake if st.session_state.ticket_sel == "All" else df_stake[df_stake[col_ticket].astype(str) == st.session_state.ticket_sel]
+    df_ticket = df_stake if ticket_sel == "All" else df_stake[df_stake[col_ticket].astype(str) == ticket_sel]
     services = sorted(df_ticket[col_service].dropna().astype(str).unique())
-    st.multiselect("", services, default=services, key="service_sel", label_visibility="collapsed")
+    service_sel = st.multiselect("", services, default=services, key="service_sel", label_visibility="collapsed")
 
     st.markdown("---")
     st.header("📍 Select Venue")
-    df_service = df_ticket if not st.session_state.service_sel else df_ticket[df_ticket[col_service].astype(str).isin(st.session_state.service_sel)]
+    df_service = df_ticket if not service_sel else df_ticket[df_ticket[col_service].astype(str).isin(service_sel)]
     venues = sorted(df_service[col_venue].dropna().unique())
-    st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
+    venue_sel = st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
 # Apply filters
-filtered = _df[_df[col_period] == st.session_state.period_sel]
-if st.session_state.stake_sel != "All":
-    filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
-if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
-    filtered = filtered[filtered[col_ticket].astype(str) == st.session_state.ticket_sel]
-if st.session_state.service_sel:
-    filtered = filtered[filtered[col_service].astype(str).isin(st.session_state.service_sel)]
-if st.session_state.venue_sel:
-    filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
+filtered = _df[_df[col_period] == period_sel]
+if stake_sel != "All":
+    filtered = filtered[filtered[col_stake] == stake_sel]
+if ticket_sel != "All":
+    filtered = filtered[filtered[col_ticket].astype(str) == ticket_sel]
+if service_sel:
+    filtered = filtered[filtered[col_service].astype(str).isin(service_sel)]
+if venue_sel:
+    filtered = filtered[filtered[col_venue].isin(venue_sel)]
 
 # Prepare data
 required = {col_bx, col_ao, col_aq, col_request}
