@@ -154,7 +154,6 @@ def make_fig(data):
     return fig
 
 def stats_fig(df_all):
-    # Bring back the previous aesthetic and correct logic: MoD separated first
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
@@ -236,50 +235,44 @@ def build_occupancy_chart(clean_df, cap_df):
     return fig2
 
 def main_display():
-    # Create the layout with columns
-    col1, col_sep, col2 = st.columns([3, 0.02, 1])
+    # First row: Spectrum plot
+    st.subheader("Spectrum Plot")
+    fig = make_fig(clean)
+    if fig is not None:
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info(f"No data for {st.session_state.period_sel}")
 
-    # Spectrum plot
-    with col1:
-        fig = make_fig(clean)
-        if fig is not None:
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info(f"No data for {st.session_state.period_sel}")
-        
-        # Pie chart
-        pie = stats_fig(filtered)
-        st.plotly_chart(pie, use_container_width=True)
-    
-    with col_sep:
-        # Line separator between pie and empty area
-        st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
-
-    # Right empty column
-    with col2:
-        pass  # Empty space for the moment
-
-    # Below: Occupancy plot and KO table
+    # Second row: Pie chart on the left, empty column on the right
     st.markdown("---")
     col1, col_sep, col2 = st.columns([3, 0.02, 1])
-
+    
     with col1:
-        occ_fig = build_occupancy_chart(clean, cap_df)
-        if occ_fig is None:
-            st.info("No capacity/occupancy data for the current filters.")
-        else:
-            st.plotly_chart(occ_fig, use_container_width=True)
+        pie = stats_fig(filtered)
+        st.plotly_chart(pie, use_container_width=True)
 
     with col_sep:
-        pass  # Empty space for the moment
-
+        pass  # Empty space
+    
     with col2:
-        st.subheader("Failed Assignments")
-        ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
-        if ko_df.empty:
-            st.info("No failed assignments for the current filters.")
-        else:
-            st.dataframe(ko_df, use_container_width=True)
+        pass  # Empty space
+    
+    # Third row: Capacity plot
+    st.markdown("---")
+    occ_fig = build_occupancy_chart(clean, cap_df)
+    if occ_fig is None:
+        st.info("No capacity/occupancy data for the current filters.")
+    else:
+        st.plotly_chart(occ_fig, use_container_width=True)
+
+    # Fourth row: KO table
+    st.markdown("---")
+    st.subheader("Failed Assignments")
+    ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
+    if ko_df.empty:
+        st.info("No failed assignments for the current filters.")
+    else:
+        st.dataframe(ko_df, use_container_width=True)
 
 if __name__ == "__main__":
     main_display()
