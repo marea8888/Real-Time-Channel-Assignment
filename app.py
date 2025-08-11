@@ -333,7 +333,7 @@ def main_display():
 
     # Add a dropdown for filtering by TMP Status
     tmp_status_options = ['All', 'No Spectrum within the requested range', 'To Be Investigated', 'Contact stakeholder', 'Not Analysed']
-    selected_status = st.selectbox("", tmp_status_options)
+    selected_status = st.selectbox("Filter by TMP Status", tmp_status_options)
 
     # Filter KO table based on TMP Status
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
@@ -341,11 +341,15 @@ def main_display():
     if selected_status != 'All':
         ko_df = ko_df[ko_df['TMP Status'] == selected_status]
 
+    # Selecting only the specified columns
+    ko_df = ko_df[['Request ID', 'Service Tri Code', 'Venue Code', 'Usage Type', 'Transmission Type', 'Is Simplex',
+                   'Tuning Range From', 'Tuning Range To', 'Channel Bandwidth (kHz)', 'Tuning Step (kHz)',
+                   'Transmission Power (W)', 'Notes', 'Note ottimizzazione', 'IMD Step', 'MiCo Comments']]
+
     if ko_df.empty:
         st.info("No failed assignments for the current filters.")
     else:
         st.dataframe(ko_df, use_container_width=True)
-
 
 
 if __name__ == "__main__":
