@@ -244,7 +244,8 @@ def main_display():
         st.plotly_chart(pie, use_container_width=True)
     st.markdown("---")
     st.subheader("Failed Assignments")
-    ko_df = filtered[filtered[col_bx].isna()].copy()
+    # Filter out MoD Coordination requests
+    ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
     if ko_df.empty:
         st.info("No failed assignments for the current filters.")
     else:
