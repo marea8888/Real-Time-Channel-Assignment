@@ -31,15 +31,21 @@ col_pnrf    = "PNRF"
 col_new_venue = "New venue code for OTH"
 col_new_service = "New service code for OTH"
 
+# Carica i dati da Google Drive
 @st.cache_data(ttl=60)
 def load_data():
     url = f"https://drive.google.com/uc?id={FILE_ID}"
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
+# Carica i dati per la capacità
 @st.cache_data(ttl=60)
 def load_capacity():
     return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
+
+# Carica i dati all'inizio
+_df = load_data()
+cap_df = load_capacity()
 
 # Carica l'immagine per la sezione dei filtri
 st.sidebar.markdown("""
