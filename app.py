@@ -31,36 +31,43 @@ col_pnrf    = "PNRF"
 col_new_venue = "New venue code for OTH"
 col_new_service = "New service code for OTH"
 
-# Carica i dati da Google Drive
 @st.cache_data(ttl=60)
 def load_data():
     url = f"https://drive.google.com/uc?id={FILE_ID}"
     gdown.download(url, OUTPUT_FILE, quiet=True)
     return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
 
-# Carica i dati per la capacità
 @st.cache_data(ttl=60)
 def load_capacity():
     return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
 
-# Carica i dati all'inizio
-_df = load_data()
-cap_df = load_capacity()
-
-# Carica l'immagine per la sezione dei filtri
-st.sidebar.markdown("""
+# Custom CSS
+st.markdown("""
     <style>
-    .sidebar-image {
-        width: 100%;  /* Adatta l'immagine alla larghezza della sidebar */
-        height: auto;  /* Mantiene le proporzioni */
+    .stSidebar [data-baseweb="tag"] {
+        background-color: #e0f7fa !important;
+        color: #000 !important;
+        border-radius: 4px !important;
+        padding: 2px 6px !important;
+        margin: 2px !important;
     }
+    .stSidebar [data-baseweb="tag"][role="button"] svg { fill: #000 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# Usa il link diretto dell'immagine su Google Drive
-st.sidebar.markdown("""
-    <img src="https://drive.google.com/uc?id=1LKh0tEavhJ1aZsbzyXDmNiu8tRbF0JUt" class="sidebar-image">
-""", unsafe_allow_html=True)
+_df = load_data()
+cap_df = load_capacity()
+
+# Step 1: Replace "OTH" values in "Venue Code" and "Service Tri Code" with their respective new values
+_df[col_venue] = _df.apply(
+    lambda row: row[col_new_venue] if row[col_venue] == "OTH" else row[col_venue],
+    axis=1
+)
+
+_df[col_service] = _df.apply(
+    lambda row: row[col_new_service] if row[col_service] == "OTH" else row[col_service],
+    axis=1
+)
 
 # Sidebar filters
 with st.sidebar:
