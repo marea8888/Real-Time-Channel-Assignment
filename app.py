@@ -293,12 +293,13 @@ def main_display():
         else:
             st.info("No TMP Status data for NOT ASSIGNED requests.")
 
-    # Optionally, you can add an arrow or line between the two pies
+    # Add a visual connection between the two pie charts using an SVG arrow
     st.markdown("""
-    <div style="text-align: center;">
-        <svg width="50" height="50">
-            <line x1="0" y1="25" x2="50" y2="25" style="stroke:#FFFFFF;stroke-width:4" />
-            <polygon points="50,25 45,20 45,30" style="fill:#FFFFFF" />
+    <div style="display: flex; justify-content: center; align-items: center;">
+        <svg width="60" height="60" style="position: relative; top: -10px;">
+            <!-- Arrow pointing from the first pie to the second -->
+            <line x1="0" y1="30" x2="60" y2="30" style="stroke:#FFFFFF;stroke-width:4" />
+            <polygon points="60,30 55,25 55,35" style="fill:#FFFFFF" />
         </svg>
     </div>
     """, unsafe_allow_html=True)
@@ -319,6 +320,7 @@ def main_display():
         st.info("No failed assignments for the current filters.")
     else:
         st.dataframe(ko_df, use_container_width=True)
+
 
 
 if __name__ == "__main__":
