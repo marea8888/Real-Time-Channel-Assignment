@@ -134,7 +134,7 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
     
-    # Calculate the delta for "ASSIGNED" and "NOT ASSIGNED"
+    # Calcolare il delta per "ASSIGNED" e "NOT ASSIGNED"
     delta_assigned = assigned_count_new - assigned_count_prev
     delta_not_assigned = not_assigned_count_new - not_assigned_count_prev
 
@@ -155,16 +155,13 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
             'ASSIGNED': '#2ECC71',
             'NOT ASSIGNED': '#E74C3C',
             'MoD COORDINATION': '#F1C40F'
-        },
-        title="Assigned Frequency Comparison"
+        }
     )
 
-    # Adjust the layout for better visualization and keep the delta as a separate label
+    # Aggiornamento delle tracce per rimuovere il testo dalla figura e mantenere solo la legenda
     fig.update_traces(
-        textinfo='percent+label',
-        texttemplate='%{percent:.1%} (%{value})<br>%{label}: %{Delta}',
-        textfont=dict(size=18),
-        textposition='outside',
+        textinfo='percent',  # Rimuovi il testo dal grafico, mostriamo solo le percentuali
+        texttemplate='%{percent:.1%}',  # Solo la percentuale, senza il valore numerico
         pull=[0.1]*len(stats),
         marker=dict(line=dict(color='#FFF', width=2))
     )
@@ -173,7 +170,10 @@ def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_coun
         margin=dict(l=20, r=20, t=20, b=20),
         legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
         showlegend=True,
-        title_x=0.5  # Center the title
+        title_x=0.5,  # Centra la legenda
+        title_y=1.1,  # Allontana la legenda dalla figura
+        plot_bgcolor='white',  # Cambia il colore di sfondo del grafico
+        paper_bgcolor='white'  # Cambia il colore di sfondo della carta
     )
     return fig
 
