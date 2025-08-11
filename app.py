@@ -56,6 +56,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 _df_NEW = load_data(FILE_ID_NEW)
+_df_PREV = load_data(FILE_ID_PREV)
 cap_df = load_capacity()
 
 # Sidebar filters
@@ -110,6 +111,66 @@ clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
 clean['req_id'] = clean[col_request].astype(str)
 
+# Carica i dati della versione precedente
+filtered_prev = _df_PREV[_df_PREV[col_period] == st.session_state.period_sel]
+if st.session_state.stake_sel != "All":
+    filtered_prev = filtered_prev[filtered_prev[col_stake] == st.session_state.stake_sel]
+if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
+    filtered_prev = filtered_prev[filtered_prev[col_ticket].astype(str) == st.session_state.ticket_sel]
+if st.session_state.service_sel:
+    filtered_prev = filtered_prev[filtered_prev[col_service].astype(str).isin(st.session_state.service_sel)]
+if st.session_state.venue_sel:
+    filtered_prev = filtered_prev[filtered_prev[col_venue].isin(st.session_state.venue_sel)]
+
+# Calcolo il numero di assegnazioni per entrambe le versioni
+assigned_count_prev = int(filtered_prev[col_bx].notna().sum())
+assigned_count_new = int(filtered[col_bx].notna().sum())
+
+# Calcola il delta
+delta_assigned = assigned_count_new - assigned_count_prev
+
+# Function to create the pie chart comparing previous and new versions
+def stats_fig(df_all, assigned_count_prev, assigned_count_new, delta_assigned):
+    is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
+    mod_coord_count = int(is_mod.sum())
+    base = df_all.loc[~is_mod]
+    assigned_count     = int(base[col_bx].notna().sum())
+    not_assigned_count = int(base[col_bx].isna().sum())
+
+    stats = pd.DataFrame({
+        'Status': ['ASSIGNED (Previous)', 'ASSIGNED (New)', 'NOT ASSIGNED', 'MoD COORDINATION'],
+        'Count': [assigned_count_prev, assigned_count_new, not_assigned_count, mod_coord_count]
+    })
+
+    # Aggiungi il delta come una nuova colonna
+    stats['Delta'] = stats['Count'] - stats['Count'].shift(1).fillna(0)
+
+    fig = px.pie(
+        stats,
+        names='Status', values='Count', color='Status', hole=0.6, template='plotly',
+        color_discrete_map={
+            'ASSIGNED (Previous)': '#3498db',
+            'ASSIGNED (New)': '#2ECC71',
+            'NOT ASSIGNED': '#E74C3C',
+            'MoD COORDINATION': '#F1C40F'
+        },
+        title=f"Assigned Frequency Comparison (Delta: {delta_assigned})"
+    )
+    fig.update_traces(
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
+        textfont=dict(size=18),
+        textposition='outside',
+        pull=[0.1]*len(stats),
+        marker=dict(line=dict(color='#FFF', width=2))
+    )
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
+        showlegend=True
+    )
+    return fig
+
 def make_fig(data):
     if data.empty: return None
     left = data['center'] - data['width_mhz']/2
@@ -139,43 +200,6 @@ def make_fig(data):
                    minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
                    title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
         legend=dict(font=dict(color='#FFF'))
-    )
-    return fig
-
-def stats_fig(df_all):
-    # Bring back the previous aesthetic and correct logic: MoD separated first
-    is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
-    mod_coord_count = int(is_mod.sum())
-    base = df_all.loc[~is_mod]
-    assigned_count     = int(base[col_bx].notna().sum())
-    not_assigned_count = int(base[col_bx].isna().sum())
-
-    stats = pd.DataFrame({
-        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
-    })
-
-    fig = px.pie(
-        stats,
-        names='Status', values='Count', color='Status', hole=0.6, template='plotly',
-        color_discrete_map={
-            'ASSIGNED': '#2ECC71',
-            'NOT ASSIGNED': '#E74C3C',
-            'MoD COORDINATION': '#F1C40F'
-        }
-    )
-    fig.update_traces(
-        textinfo='percent',
-        texttemplate='%{percent:.1%} (%{value})',
-        textfont=dict(size=18),
-        textposition='outside',
-        pull=[0.1]*len(stats),
-        marker=dict(line=dict(color='#FFF', width=2))
-    )
-    fig.update_layout(
-        margin=dict(l=20, r=20, t=20, b=20),
-        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
-        showlegend=True
     )
     return fig
 
@@ -241,7 +265,7 @@ def main_display():
     with col_sep:
         st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
     with col2:
-        pie = stats_fig(filtered)
+        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, delta_assigned)
         st.plotly_chart(pie, use_container_width=True)
     st.markdown("---")
     st.subheader("Failed Assignments")
