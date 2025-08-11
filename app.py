@@ -344,7 +344,7 @@ def main_display():
     # Selecting only the specified columns
     ko_df = ko_df[['Request ID', 'Service Tri Code', 'Venue Code', 'Usage Type', 'Transmission Type', 'Is Simplex',
                    'Tuning Range From', 'Tuning Range To', 'Channel Bandwidth (kHz)', 'Tuning Step (kHz)',
-                   'Transmission Power (W)', 'Notes', 'Note ottimizzazione', 'IMD Step', 'MiCo Comments']]
+                   'Transmission Power (W)', 'Notes', 'Note ottimizzazione', 'IMD step', 'MiCo Comments']]
 
     if ko_df.empty:
         st.info("No failed assignments for the current filters.")
