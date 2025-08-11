@@ -1,121 +1,254 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import numpy as np
+import gdown
 import plotly.graph_objects as go
+import plotly.express as px
 
-# ======================
-# Load Data from Google Drive
-# ======================
-@st.cache_data
-def load_data_from_gdrive(file_id):
-    url = f"https://drive.google.com/uc?id={file_id}"
-    return pd.read_excel(url)
-
-# File IDs
-FILE_ID_PREV = "1YRKlzJAfHfrcfzZyX2GnN35v1eSV4Mg-"  # previous version
-FILE_ID_NEW  = "1TD2YStCrV79DrKz0GODaEpsZtyHb85uH"  # new version
-
-# Load both versions
-df_prev = load_data_from_gdrive(FILE_ID_PREV)
-df_new  = load_data_from_gdrive(FILE_ID_NEW)
-
-# ======================
-# Sidebar Filters
-# ======================
-st.sidebar.header("Filters")
-
-# Stakeholder filter
-stakeholders = ["All"] + sorted(df_new["Stakeholder"].dropna().unique().tolist())
-selected_stakeholder = st.sidebar.selectbox("Select Stakeholder", stakeholders)
-
-# Ticket filter (FG column)
-tickets = ["All"] + sorted(df_new["FG"].dropna().unique().tolist())
-selected_ticket = st.sidebar.selectbox("Select Ticket (FG)", tickets)
-
-def apply_filters(df):
-    filtered = df.copy()
-    if selected_stakeholder != "All":
-        filtered = filtered[filtered["Stakeholder"] == selected_stakeholder]
-    if selected_ticket != "All":
-        filtered = filtered[filtered["FG"] == selected_ticket]
-    return filtered
-
-df_prev_f = apply_filters(df_prev)
-df_new_f  = apply_filters(df_new)
-
-# ======================
-# Function to calculate counts from raw filtered data
-# ======================
-def calc_counts(df):
-    mod_df = df[df["PNRF"] == "MoD"]
-    non_mod_df = df[df["PNRF"] != "MoD"]
-    assigned_count = len(non_mod_df[non_mod_df["Assigned Frequency"].notna()])
-    not_assigned_count = len(non_mod_df[non_mod_df["Assigned Frequency"].isna()])
-    mod_count = len(mod_df)
-    return assigned_count, not_assigned_count, mod_count
-
-assigned_prev, not_assigned_prev, mod_prev = calc_counts(df_prev_f)
-assigned_new, not_assigned_new, mod_new    = calc_counts(df_new_f)
-
-# ======================
-# Calculate gaps
-# ======================
-gap_assigned = assigned_new - assigned_prev
-gap_not_assigned = not_assigned_new - not_assigned_prev
-gap_mod = mod_new - mod_prev
-
-# ======================
-# Pie Chart
-# ======================
-labels = ["Assigned", "Not Assigned", "MoD Coordination"]
-values = [assigned_new, not_assigned_new, mod_new]
-colors = ["#2ca02c", "#d62728", "#ffcc00"]  # green, red, yellow
-gaps = [gap_assigned, gap_not_assigned, gap_mod]
-
-custom_text = [
-    f"{label}: {val} ({val/sum(values)*100:.1f}%)<br>Δ {gap:+d}"
-    for label, val, gap in zip(labels, values, gaps)
-]
-
-fig_pie = go.Figure(data=[go.Pie(
-    labels=labels,
-    values=values,
-    text=custom_text,
-    textinfo="text",
-    textposition="inside",
-    marker=dict(colors=colors, line=dict(color="#000000", width=1)),
-    hole=0.4
-)])
-fig_pie.update_layout(
-    title="Assignment Status (New Version) with Gap vs Previous",
-    title_x=0.5,
-    font=dict(size=14),
-    margin=dict(t=50, b=20, l=20, r=20),
-    showlegend=False
+# Page config
+st.set_page_config(
+    page_title="Realtime Frequency Plot",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
-st.plotly_chart(fig_pie, use_container_width=True)
 
-# ======================
-# Spectrum Plot
-# ======================
-if not df_new_f.empty:
-    df_plot = df_new_f[df_new_f["PNRF"] != "MoD"].copy()
-    df_plot["Assigned"] = df_plot["Assigned Frequency"].notna()
+# File & columns
+# FILE_ID     = "1YRKlzJAfHfrcfzZyX2GnN35v1eSV4Mg-"
+FILE_ID     = "1TD2YStCrV79DrKz0GODaEpsZtyHb85uH"
+OUTPUT_FILE = "frequenze.xlsx"
+SHEET       = "ALL NP"
+CAP_SHEET   = "Capacity NP-OLY"
 
-    fig_spectrum = px.scatter(
-        df_plot,
-        x="Assigned Frequency",
-        y="Stakeholder",
-        color="Assigned",
-        color_discrete_map={True: "#2ca02c", False: "#d62728"},
-        title="Spectrum View (New Version)",
-        labels={"Assigned Frequency": "Frequency (MHz)", "Stakeholder": "Stakeholder"}
+col_bx      = "Attributed Frequency TX (MHz)"
+col_ao      = "Channel Bandwidth (kHz)"
+col_aq      = "Transmission Power (W)"
+col_venue   = "Venue Code"
+col_stake   = "Stakeholder ID"
+col_request = "Request ID"
+col_period  = "License Period"
+col_service = "Service Tri Code"
+col_ticket  = "FG"
+col_pnrf    = "PNRF"
+
+@st.cache_data(ttl=60)
+def load_data():
+    url = f"https://drive.google.com/uc?id={FILE_ID}"
+    gdown.download(url, OUTPUT_FILE, quiet=True)
+    return pd.read_excel(OUTPUT_FILE, sheet_name=SHEET)
+
+@st.cache_data(ttl=60)
+def load_capacity():
+    return pd.read_excel(OUTPUT_FILE, sheet_name=CAP_SHEET)
+
+# Custom CSS
+st.markdown("""
+    <style>
+    .stSidebar [data-baseweb="tag"] {
+        background-color: #e0f7fa !important;
+        color: #000 !important;
+        border-radius: 4px !important;
+        padding: 2px 6px !important;
+        margin: 2px !important;
+    }
+    .stSidebar [data-baseweb="tag"][role="button"] svg { fill: #000 !important; }
+    </style>
+""", unsafe_allow_html=True)
+
+_df = load_data()
+cap_df = load_capacity()
+
+# Sidebar filters
+with st.sidebar:
+    st.header("🗓️ Select Period")
+    st.selectbox("", ["Olympic", "Paralympic"], key="period_sel", index=0, label_visibility="collapsed")
+    st.markdown("---")
+
+    st.header("👥 Select Stakeholder")
+    df_period = _df[_df[col_period] == st.session_state.period_sel]
+    stakeholders = sorted(df_period[col_stake].dropna().astype(str).unique())
+    st.selectbox("", ["All"] + stakeholders, key="stake_sel", index=0, label_visibility="collapsed")
+
+    st.markdown("---")
+    st.header("🎫 Select Ticket")
+    df_stake = df_period if st.session_state.stake_sel == "All" else df_period[df_period[col_stake] == st.session_state.stake_sel]
+    tickets = sorted(df_stake[col_ticket].dropna().astype(str).unique()) if col_ticket in df_stake.columns else []
+    st.selectbox("", ["All"] + tickets, key="ticket_sel", index=0, label_visibility="collapsed")
+
+    st.markdown("---")
+    st.header("🔧 Select Service")
+    df_ticket = df_stake if st.session_state.ticket_sel == "All" else df_stake[df_stake[col_ticket].astype(str) == st.session_state.ticket_sel]
+    services = sorted(df_ticket[col_service].dropna().astype(str).unique())
+    st.multiselect("", services, default=services, key="service_sel", label_visibility="collapsed")
+
+    st.markdown("---")
+    st.header("📍 Select Venue")
+    df_service = df_ticket if not st.session_state.service_sel else df_ticket[df_ticket[col_service].astype(str).isin(st.session_state.service_sel)]
+    venues = sorted(df_service[col_venue].dropna().unique())
+    st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
+
+# Apply filters
+filtered = _df[_df[col_period] == st.session_state.period_sel]
+if st.session_state.stake_sel != "All":
+    filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
+if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
+    filtered = filtered[filtered[col_ticket].astype(str) == st.session_state.ticket_sel]
+if st.session_state.service_sel:
+    filtered = filtered[filtered[col_service].astype(str).isin(st.session_state.service_sel)]
+if st.session_state.venue_sel:
+    filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
+
+# Prepare data
+required = {col_bx, col_ao, col_aq, col_request}
+if required - set(filtered.columns):
+    st.error(f"Missing columns: {required - set(filtered.columns)}")
+    st.stop()
+
+clean = filtered.dropna(subset=[col_ao, col_aq, col_request]).copy()
+clean['center'] = pd.to_numeric(clean[col_bx], errors='coerce')
+clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
+clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
+clean['req_id'] = clean[col_request].astype(str)
+
+def make_fig(data):
+    if data.empty: return None
+    left = data['center'] - data['width_mhz']/2
+    right = data['center'] + data['width_mhz']/2
+    min_x, max_x = left.min(), right.max()
+    min_y, max_y = data['power_dBm'].min(), data['power_dBm'].max()
+    dx = max((max_x - min_x) * 0.05, 1)
+    dy = max((max_y - min_y) * 0.05, 1)
+    fig = go.Figure()
+    palette = px.colors.qualitative.Dark24
+    for i, stake in enumerate(sorted(data[col_stake].astype(str).unique())):
+        grp = data[data[col_stake] == stake]
+        fig.add_trace(go.Bar(
+            x=grp['center'], y=grp['power_dBm'], width=grp['width_mhz'], name=stake,
+            marker_color=palette[i % len(palette)], opacity=0.8,
+            marker_line_color='white', marker_line_width=1,
+            customdata=list(zip(grp['req_id'], grp[col_ao])),
+            hovertemplate='Request ID: %{customdata[0]}<br>Freq: %{x} MHz<br>Bandwidth: %{customdata[1]} kHz<br>Power: %{y:.1f} dBm<extra></extra>'
+        ))
+    fig.update_layout(
+        template='plotly_dark', barmode='overlay', dragmode='zoom',
+        plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
+        xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
+                   title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=20, color='#FFF'))),
+        yaxis=dict(range=[min_y - dy, max_y + dy], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+                   minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
+                   title=dict(text='<b>Power (dBm)</b>', font=dict(size=20, color='#FFF'))),
+        legend=dict(font=dict(color='#FFF'))
     )
+    return fig
 
-    # Grid ON
-    fig_spectrum.update_xaxes(showgrid=True, gridcolor="LightGray", zeroline=False)
-    fig_spectrum.update_yaxes(showgrid=True, gridcolor="LightGray", zeroline=False)
+def stats_fig(df_all):
+    # Bring back the previous aesthetic and correct logic: MoD separated first
+    is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
+    mod_coord_count = int(is_mod.sum())
+    base = df_all.loc[~is_mod]
+    assigned_count     = int(base[col_bx].notna().sum())
+    not_assigned_count = int(base[col_bx].isna().sum())
 
-    st.plotly_chart(fig_spectrum, use_container_width=True)
-else:
-    st.info("No data available for selected filters.")
+    stats = pd.DataFrame({
+        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
+        'Count':  [assigned_count, not_assigned_count, mod_coord_count]
+    })
+
+    fig = px.pie(
+        stats,
+        names='Status', values='Count', color='Status', hole=0.6, template='plotly',
+        color_discrete_map={
+            'ASSIGNED': '#2ECC71',
+            'NOT ASSIGNED': '#E74C3C',
+            'MoD COORDINATION': '#F1C40F'
+        }
+    )
+    fig.update_traces(
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
+        textfont=dict(size=18),
+        textposition='outside',
+        pull=[0.1]*len(stats),
+        marker=dict(line=dict(color='#FFF', width=2))
+    )
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.2, yanchor='bottom', font=dict(size=14)),
+        showlegend=True
+    )
+    return fig
+
+def build_occupancy_chart(clean_df, cap_df):
+    assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
+    venues_list = assigned_bw.index.tolist()
+    usage_list = []
+    cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
+    for _, r in cap_selected.iterrows():
+        venue = r['Venue']
+        f_from = float(r['Freq. From [MHz]'])
+        f_to = float(r['Freq. To [MHz]'])
+        tot = float(r['Tot MHz'])
+        assigns = clean_df[clean_df[col_venue] == venue]
+        overlaps = []
+        for _, a in assigns.iterrows():
+            left = a['center'] - a['width_mhz']/2
+            right = a['center'] + a['width_mhz']/2
+            start = max(left, f_from)
+            end = min(right, f_to)
+            if end > start:
+                overlaps.append((start, end))
+        overlaps_sorted = sorted(overlaps, key=lambda x: x[0])
+        merged = []
+        for interval in overlaps_sorted:
+            if not merged or interval[0] > merged[-1][1]:
+                merged.append(list(interval))
+            else:
+                merged[-1][1] = max(merged[-1][1], interval[1])
+        assigned_overlap = sum(end - start for start, end in merged)
+        occupancy_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
+        usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': occupancy_pct})
+    usage_df = pd.DataFrame(usage_list)
+    if not usage_df.empty and 'Occupancy' in usage_df.columns:
+        usage_df = usage_df[usage_df['Occupancy'] > 0]
+    if usage_df.empty:
+        return None
+    occ_values = usage_df['Occupancy'].astype(float).fillna(0).tolist()
+    labels = [f"{row['Venue']} ({row['Range']})" for _, row in usage_df.iterrows()]
+    fig2 = go.Figure(go.Bar(x=occ_values, y=labels, orientation='h',
+                            marker=dict(color=occ_values, colorscale='RdYlGn_r', cmin=0, cmax=100,
+                                        colorbar=dict(title='Occupancy %', thickness=15, lenmode='fraction', len=0.75)),
+                            text=[f"{v:.1f}%" for v in occ_values], textposition='outside'))
+    fig2.update_layout(xaxis=dict(visible=False), yaxis_title='', template='plotly',
+                       plot_bgcolor='white', paper_bgcolor='white', font_color='black',
+                       margin=dict(l=100, r=50, t=20, b=50))
+    return fig2
+
+def main_display():
+    fig = make_fig(clean)
+    if fig is not None:
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info(f"No data for {st.session_state.period_sel}")
+    st.markdown("---")
+    col1, col_sep, col2 = st.columns([3, 0.02, 1])
+    with col1:
+        occ_fig = build_occupancy_chart(clean, cap_df)
+        if occ_fig is None:
+            st.info("No capacity/occupancy data for the current filters.")
+        else:
+            st.plotly_chart(occ_fig, use_container_width=True)
+    with col_sep:
+        st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
+    with col2:
+        pie = stats_fig(filtered)
+        st.plotly_chart(pie, use_container_width=True)
+    st.markdown("---")
+    st.subheader("Failed Assignments")
+    ko_df = filtered[filtered[col_bx].isna()].copy()
+    if ko_df.empty:
+        st.info("No failed assignments for the current filters.")
+    else:
+        st.dataframe(ko_df, use_container_width=True)
+
+if __name__ == "__main__":
+    main_display()
