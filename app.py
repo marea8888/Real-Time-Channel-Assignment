@@ -88,7 +88,7 @@ with st.sidebar:
     venues = sorted(df_service[col_venue].dropna().unique())
     st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
-# Apply filters
+# Apply filters for the new data version
 filtered = _df_NEW[_df_NEW[col_period] == st.session_state.period_sel]
 if st.session_state.stake_sel != "All":
     filtered = filtered[filtered[col_stake] == st.session_state.stake_sel]
@@ -98,6 +98,17 @@ if st.session_state.service_sel:
     filtered = filtered[filtered[col_service].astype(str).isin(st.session_state.service_sel)]
 if st.session_state.venue_sel:
     filtered = filtered[filtered[col_venue].isin(st.session_state.venue_sel)]
+
+# Apply filters for the previous data version
+filtered_prev = _df_PREV[_df_PREV[col_period] == st.session_state.period_sel]
+if st.session_state.stake_sel != "All":
+    filtered_prev = filtered_prev[filtered_prev[col_stake] == st.session_state.stake_sel]
+if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
+    filtered_prev = filtered_prev[filtered_prev[col_ticket].astype(str) == st.session_state.ticket_sel]
+if st.session_state.service_sel:
+    filtered_prev = filtered_prev[filtered_prev[col_service].astype(str).isin(st.session_state.service_sel)]
+if st.session_state.venue_sel:
+    filtered_prev = filtered_prev[filtered_prev[col_venue].isin(st.session_state.venue_sel)]
 
 # Prepare data
 required = {col_bx, col_ao, col_aq, col_request}
@@ -111,42 +122,30 @@ clean['width_mhz'] = pd.to_numeric(clean[col_ao], errors='coerce') / 1000.0
 clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce') * 1000)
 clean['req_id'] = clean[col_request].astype(str)
 
-# Carica i dati della versione precedente
-filtered_prev = _df_PREV[_df_PREV[col_period] == st.session_state.period_sel]
-if st.session_state.stake_sel != "All":
-    filtered_prev = filtered_prev[filtered_prev[col_stake] == st.session_state.stake_sel]
-if "ticket_sel" in st.session_state and st.session_state.ticket_sel != "All":
-    filtered_prev = filtered_prev[filtered_prev[col_ticket].astype(str) == st.session_state.ticket_sel]
-if st.session_state.service_sel:
-    filtered_prev = filtered_prev[filtered_prev[col_service].astype(str).isin(st.session_state.service_sel)]
-if st.session_state.venue_sel:
-    filtered_prev = filtered_prev[filtered_prev[col_venue].isin(st.session_state.venue_sel)]
-
-# Calcolo il numero di assegnazioni per entrambe le versioni
+# Calculate assigned and not assigned counts for both versions
 assigned_count_prev = int(filtered_prev[col_bx].notna().sum())
 assigned_count_new = int(filtered[col_bx].notna().sum())
+not_assigned_count_prev = int(filtered_prev[col_bx].isna().sum())
+not_assigned_count_new = int(filtered[col_bx].isna().sum())
 
-# Calcola il delta
-delta_assigned = assigned_count_new - assigned_count_prev
-
-# Function to create the pie chart comparing previous and new versions
+# Function to create the pie chart comparing previous and new versions with delta
 def stats_fig(df_all, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new):
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
     base = df_all.loc[~is_mod]
-    assigned_count = assigned_count_new
-    not_assigned_count = not_assigned_count_new
-
-    # Calcolo del delta per "ASSIGNED" e "NOT ASSIGNED"
+    
+    # Calculate the delta for "ASSIGNED" and "NOT ASSIGNED"
     delta_assigned = assigned_count_new - assigned_count_prev
     delta_not_assigned = not_assigned_count_new - not_assigned_count_prev
 
     stats = pd.DataFrame({
         'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count': [assigned_count, not_assigned_count, mod_coord_count],
-        'Delta': [f"+{delta_assigned}" if delta_assigned > 0 else f"{delta_assigned}", 
-                  f"+{delta_not_assigned}" if delta_not_assigned > 0 else f"{delta_not_assigned}", 
-                  ""]
+        'Count': [assigned_count_new, not_assigned_count_new, mod_coord_count],
+        'Delta': [
+            f"+{delta_assigned}" if delta_assigned > 0 else f"{delta_assigned}",
+            f"+{delta_not_assigned}" if delta_not_assigned > 0 else f"{delta_not_assigned}",
+            ""
+        ]
     })
 
     fig = px.pie(
@@ -270,7 +269,7 @@ def main_display():
     with col_sep:
         st.markdown("<div style='width:1px; background-color:#888; height:600px; margin:0 auto;'></div>", unsafe_allow_html=True)
     with col2:
-        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, delta_assigned)
+        pie = stats_fig(filtered, assigned_count_prev, assigned_count_new, not_assigned_count_prev, not_assigned_count_new)
         st.plotly_chart(pie, use_container_width=True)
     st.markdown("---")
     st.subheader("Failed Assignments")
