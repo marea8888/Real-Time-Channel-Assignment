@@ -191,6 +191,10 @@ def stats_fig(df_all):
     # Second pie chart for TMP Status of NOT ASSIGNED
     not_assigned_df = df_all[df_all[col_bx].isna()]
     if not not_assigned_df.empty and 'TMP Status' in not_assigned_df.columns:
+        # Replace NaN values with "Not Analysed"
+        not_assigned_df['TMP Status'] = not_assigned_df['TMP Status'].fillna('Not Analysed')
+        
+        # Count occurrences of TMP Status
         tmp_status_counts = not_assigned_df['TMP Status'].value_counts()
         tmp_status_stats = pd.DataFrame({
             'Status': tmp_status_counts.index,
@@ -216,6 +220,7 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
+
 
 
 def build_occupancy_chart(clean_df, cap_df):
