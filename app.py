@@ -5,6 +5,17 @@ import gdown
 import plotly.graph_objects as go
 import plotly.express as px
 
+st.markdown("""
+    <style>
+    .stApp {
+        background-image: url('assets/immagine_olimpiadi.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Page config
 st.set_page_config(
     page_title="Realtime Frequency Plot",
