@@ -210,19 +210,10 @@ def stats_fig(df_all):
             'Count': tmp_status_counts.values
         })
 
-        # Mappa dei colori personalizzati
-        #color_map = {
-        #    'No Spectrum within the requested range': '#8B0000',  # Rosso scuro
-        #    'To Be Investigated': '#FFCCCC',  # Rosso chiarissimo
-        #    'Contact stakeholder': '#FFA500',  # Arancione
-        #    'Not Analysed': '#D3D3D3',  # Grigio chiaro
-        #}
-
         tmp_status_fig = px.pie(
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
             color='Status', 
-            #color_discrete_map=color_map  # Applica la mappa colori personalizzata
         )
         tmp_status_fig.update_traces(
             textinfo='percent',
@@ -309,21 +300,6 @@ def main_display():
         else:
             st.info("No TMP Status data for the selected filters.")
     
-    # Add visual connection between the two pie charts
-    #st.markdown("""
-    #<div style="display: flex; justify-content: center; align-items: center; position: relative; top: -20px;">
-    #    <!-- Arrow pointing from the first pie to the second -->
-    #    <svg width="80" height="80">
-    #        <line x1="0" y1="40" x2="80" y2="40" style="stroke:#FFFFFF;stroke-width:4" />
-    #        <polygon points="80,40 75,35 75,45" style="fill:#FFFFFF" />
-    #    </svg>
-    #</div>
-    #""", unsafe_allow_html=True)
-    
-    #st.markdown("""<div style="text-align: center; color: white; font-size: 18px; margin-top: -20px;">
-    #    <strong>Analysis of "NOT ASSIGNED" Requests</strong>
-    #</div>""", unsafe_allow_html=True)
-
     # Third row: Capacity plot
     st.markdown("---")
     occ_fig = build_occupancy_chart(clean, cap_df)
