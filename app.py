@@ -154,6 +154,10 @@ def make_fig(data):
     return fig
 
 def stats_fig(df_all):
+    # Verifica che ci siano dati per il grafico principale
+    if df_all.empty:
+        return None, None  # Nessun dato, non generiamo i grafici
+
     # Filtraggio delle righe "NOT ASSIGNED" per il diagramma principale
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
     mod_coord_count = int(is_mod.sum())
@@ -233,8 +237,6 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
-
-
     
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
@@ -294,15 +296,17 @@ def main_display():
     col1, col_sep, col2 = st.columns([3, 0.02, 3])  # Larger columns for the pie charts
 
     with col1:
-        pie = stats_fig(filtered)[0]
-        st.plotly_chart(pie, use_container_width=True)
+        pie, tmp_status_pie = stats_fig(filtered)
+        if pie is not None:
+            st.plotly_chart(pie, use_container_width=True)
+        else:
+            st.info("No data available for the selected filters.")
 
     with col2:
-        tmp_status_pie = stats_fig(filtered)[1]
         if tmp_status_pie is not None:
             st.plotly_chart(tmp_status_pie, use_container_width=True)
         else:
-            st.info("No TMP Status data for NOT ASSIGNED requests.")
+            st.info("No TMP Status data for the selected filters.")
     
     # Add visual connection between the two pie charts
     st.markdown("""
@@ -344,13 +348,9 @@ def main_display():
     # Selecting only the specified columns
     ko_df = ko_df[['Request ID', 'Service Tri Code', 'Venue Code', 'Usage Type', 'Transmission Type', 'Is Simplex',
                    'Tuning Range From', 'Tuning Range To', 'Channel Bandwidth (kHz)', 'Tuning Step (kHz)',
-                   'Transmission Power (W)', 'Notes', 'Note ottimizzazione', 'IMD step', 'MiCo Comments']]
+                   'Transmission Power (W)', 'Notes', 'Note ottimizzazione', 'IMD Step', 'MiCo Comments']]
 
     if ko_df.empty:
         st.info("No failed assignments for the current filters.")
     else:
         st.dataframe(ko_df, use_container_width=True)
-
-
-if __name__ == "__main__":
-    main_display()
