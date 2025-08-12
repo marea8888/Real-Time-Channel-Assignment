@@ -222,7 +222,7 @@ def stats_fig(df_all):
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
             color='Status', 
-            color_discrete_map=color_map  # Applica la mappa colori personalizzata
+            #color_discrete_map=color_map  # Applica la mappa colori personalizzata
         )
         tmp_status_fig.update_traces(
             textinfo='percent',
