@@ -210,19 +210,20 @@ def stats_fig(df_all):
             'Count': tmp_status_counts.values
         })
 
-        # Mappa dei colori personalizzati
-        color_map = {
-            'No Spectrum within the requested range': '#8B0000',  # Rosso scuro
-            'To Be Investigated': '#FFCCCC',  # Rosso chiarissimo
-            'Contact stakeholder': '#FFA500',  # Arancione
-            'Not Analysed': '#D3D3D3',  # Grigio chiaro
-        }
+        # Creazione del filtro dinamico con valori unici
+        tmp_status_options = tmp_status_stats['Status'].tolist()
+        tmp_status_options.insert(0, 'All')
 
+        selected_status = st.selectbox("Filter by TMP Status", tmp_status_options)
+
+        if selected_status != 'All':
+            not_assigned_base = not_assigned_base[not_assigned_base['TMP Status'] == selected_status]
+        
         tmp_status_fig = px.pie(
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
             color='Status', 
-            color_discrete_map=color_map  # Applica la mappa colori personalizzata
+            color_discrete_map={status: px.colors.qualitative.Set1[i % len(tmp_status_stats['Status'])] for i, status in enumerate(tmp_status_stats['Status'].unique())}
         )
         tmp_status_fig.update_traces(
             textinfo='percent',
@@ -335,10 +336,6 @@ def main_display():
     # Fourth row: KO table
     st.markdown("---")
     st.subheader("Failed Assignments")
-
-    # Add a dropdown for filtering by TMP Status
-    tmp_status_options = ['All', 'No Spectrum within the requested range', 'To Be Investigated', 'Contact stakeholder', 'Not Analysed']
-    selected_status = st.selectbox("", tmp_status_options)
 
     # Filter KO table based on TMP Status
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
