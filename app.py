@@ -210,10 +210,21 @@ def stats_fig(df_all):
             'Count': tmp_status_counts.values
         })
 
+        # Creazione del filtro dinamico con valori unici da TMP Status
+        tmp_status_options = tmp_status_stats['Status'].tolist()
+        tmp_status_options.insert(0, 'All')  # Aggiungi 'All' come opzione per visualizzare tutti i valori
+
+        selected_status = st.selectbox("", tmp_status_options)
+
+        # Filtra i dati in base alla selezione dell'utente
+        if selected_status != 'All':
+            not_assigned_base = not_assigned_base[not_assigned_base['TMP Status'] == selected_status]
+
         tmp_status_fig = px.pie(
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
             color='Status', 
+            color_discrete_map={status: px.colors.qualitative.Set1[i % len(tmp_status_stats['Status'])] for i, status in enumerate(tmp_status_stats['Status'].unique())}
         )
         tmp_status_fig.update_traces(
             textinfo='percent',
@@ -229,6 +240,7 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
+
 
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
