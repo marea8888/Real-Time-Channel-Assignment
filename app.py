@@ -154,9 +154,9 @@ def make_fig(data):
     return fig
 
 def stats_fig(df_all):
-    # Verifica che ci siano dati per il grafico principale
+    # Verifica se ci sono dati
     if df_all.empty:
-        return None, None  # Nessun dato, non generiamo i grafici
+        return None, None  # Restituisce None se non ci sono dati
 
     # Filtraggio delle righe "NOT ASSIGNED" per il diagramma principale
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
@@ -237,7 +237,7 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
-    
+
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
     venues_list = assigned_bw.index.tolist()
@@ -337,7 +337,7 @@ def main_display():
 
     # Add a dropdown for filtering by TMP Status
     tmp_status_options = ['All', 'No Spectrum within the requested range', 'To Be Investigated', 'Contact stakeholder', 'Not Analysed']
-    selected_status = st.selectbox("", tmp_status_options)
+    selected_status = st.selectbox("Filter by TMP Status", tmp_status_options)
 
     # Filter KO table based on TMP Status
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
@@ -354,3 +354,6 @@ def main_display():
         st.info("No failed assignments for the current filters.")
     else:
         st.dataframe(ko_df, use_container_width=True)
+
+if __name__ == "__main__":
+   
