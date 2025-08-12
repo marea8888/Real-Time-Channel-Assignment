@@ -240,51 +240,6 @@ def stats_fig(df_all):
 
     return fig, tmp_status_fig
 
-def build_occupancy_chart(clean_df, cap_df):
-    assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
-    venues_list = assigned_bw.index.tolist()
-    usage_list = []
-    cap_selected = cap_df[cap_df["Venue"].isin(venues_list)].copy()
-    for _, r in cap_selected.iterrows():
-        venue = r['Venue']
-        f_from = float(r['Freq. From [MHz]'])
-        f_to = float(r['Freq. To [MHz]'])
-        tot = float(r['Tot MHz'])
-        assigns = clean_df[clean_df[col_venue] == venue]
-        overlaps = []
-        for _, a in assigns.iterrows():
-            left = a['center'] - a['width_mhz']/2
-            right = a['center'] + a['width_mhz']/2
-            start = max(left, f_from)
-            end = min(right, f_to)
-            if end > start:
-                overlaps.append((start, end))
-        overlaps_sorted = sorted(overlaps, key=lambda x: x[0])
-        merged = []
-        for interval in overlaps_sorted:
-            if not merged or interval[0] > merged[-1][1]:
-                merged.append(list(interval))
-            else:
-                merged[-1][1] = max(merged[-1][1], interval[1])
-        assigned_overlap = sum(end - start for start, end in merged)
-        occupancy_pct = (assigned_overlap / tot * 100) if tot > 0 else 0
-        usage_list.append({'Venue': venue, 'Range': f"{f_from}-{f_to} MHz", 'Occupancy': occupancy_pct})
-    usage_df = pd.DataFrame(usage_list)
-    if not usage_df.empty and 'Occupancy' in usage_df.columns:
-        usage_df = usage_df[usage_df['Occupancy'] > 0]
-    if usage_df.empty:
-        return None
-    occ_values = usage_df['Occupancy'].astype(float).fillna(0).tolist()
-    labels = [f"{row['Venue']} ({row['Range']})" for _, row in usage_df.iterrows()]
-    fig2 = go.Figure(go.Bar(x=occ_values, y=labels, orientation='h',
-                            marker=dict(color=occ_values, colorscale='RdYlGn_r', cmin=0, cmax=100,
-                                        colorbar=dict(title='Occupancy %', thickness=15, lenmode='fraction', len=0.75)),
-                            text=[f"{v:.1f}%" for v in occ_values], textposition='outside'))
-    fig2.update_layout(xaxis=dict(visible=False), yaxis_title='', template='plotly',
-                       plot_bgcolor='white', paper_bgcolor='white', font_color='black',
-                       margin=dict(l=100, r=50, t=20, b=50))
-    return fig2
-
 def main_display():
     # First row: Spectrum plot
     fig = make_fig(clean)
