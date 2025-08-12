@@ -122,7 +122,8 @@ clean['power_dBm'] = 10 * np.log10(pd.to_numeric(clean[col_aq], errors='coerce')
 clean['req_id'] = clean[col_request].astype(str)
 
 def make_fig(data):
-    if data.empty: return None
+    if data.empty:
+        return None  # If the data is empty, return None
     left = data['center'] - data['width_mhz']/2
     right = data['center'] + data['width_mhz']/2
     min_x, max_x = left.min(), right.max()
@@ -154,9 +155,9 @@ def make_fig(data):
     return fig
 
 def stats_fig(df_all):
-    # Verifica se ci sono dati
+    # Verifica se ci sono dati per evitare errori
     if df_all.empty:
-        return None, None  # Restituisce None se non ci sono dati
+        return None, None  # Se non ci sono dati, restituisci None
 
     # Filtraggio delle righe "NOT ASSIGNED" per il diagramma principale
     is_mod = df_all[col_pnrf].astype(str).str.strip().eq("MoD") if col_pnrf in df_all.columns else pd.Series(False, index=df_all.index)
@@ -356,4 +357,4 @@ def main_display():
         st.dataframe(ko_df, use_container_width=True)
 
 if __name__ == "__main__":
-   
+    main_display()
