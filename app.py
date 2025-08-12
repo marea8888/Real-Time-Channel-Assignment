@@ -210,16 +210,6 @@ def stats_fig(df_all):
             'Count': tmp_status_counts.values
         })
 
-        # Creazione del filtro dinamico con valori unici da TMP Status
-        tmp_status_options = tmp_status_stats['Status'].tolist()
-        tmp_status_options.insert(0, 'All')  # Aggiungi 'All' come opzione per visualizzare tutti i valori
-
-        selected_status = st.selectbox("", tmp_status_options)
-
-        # Filtra i dati in base alla selezione dell'utente
-        if selected_status != 'All':
-            not_assigned_base = not_assigned_base[not_assigned_base['TMP Status'] == selected_status]
-
         tmp_status_fig = px.pie(
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
@@ -240,7 +230,6 @@ def stats_fig(df_all):
         )
 
     return fig, tmp_status_fig
-
 
 def build_occupancy_chart(clean_df, cap_df):
     assigned_bw = clean_df.groupby(col_venue)["width_mhz"].sum()
@@ -324,9 +313,9 @@ def main_display():
     st.markdown("---")
     st.subheader("Failed Assignments")
 
-    # Add a dropdown for filtering by TMP Status
-    tmp_status_options = ['All', 'No Spectrum within the requested range', 'To Be Investigated', 'Contact stakeholder', 'Not Analysed']
-    selected_status = st.selectbox("", tmp_status_options)
+    # After the charts, add the filter for TMP Status
+    tmp_status_options = ['All'] + clean['TMP Status'].dropna().unique().tolist()
+    selected_status = st.selectbox("Filter by TMP Status", tmp_status_options)
 
     # Filter KO table based on TMP Status
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
