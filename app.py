@@ -315,7 +315,7 @@ def main_display():
 
     # After the charts, add the filter for TMP Status
     tmp_status_options = ['All'] + clean['TMP Status'].dropna().unique().tolist()
-    selected_status = st.selectbox("Filter by TMP Status", tmp_status_options)
+    selected_status = st.selectbox("", tmp_status_options)
 
     # Filter KO table based on TMP Status
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
