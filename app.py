@@ -408,7 +408,7 @@ def main_display():
     st.subheader("🏆 Classifica Stakeholder con più NOT ASSIGNED (totale)")
     
     # Conteggio KO per Stakeholder
-    ko_global_counts = ko_global_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
+    ko_global_counts = ko_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
     
     # Ordiniamo in ordine decrescente
     ko_global_counts = ko_global_counts.sort_values(by='KO_count', ascending=False)
