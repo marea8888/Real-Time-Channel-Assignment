@@ -350,7 +350,7 @@ def main_display():
     ko_counts = ko_counts.merge(total_per_priority, left_on='Priority', right_on='Priority Indicator per Stakeholder', how='left')
     ko_counts['Percentage'] = (ko_counts['Count'] / ko_counts['Total'] * 100).round(2)
     
-    # Creiamo l'istogramma
+    # Creiamo l'istogramma a barre semplice
     fig_ko_priority = px.bar(
         ko_counts,
         x='Priority',
@@ -360,7 +360,8 @@ def main_display():
             'Priority': 'Priority',
             'Percentage': '% NOT ASSIGNED'
         },
-        color='Priority',
+        color='Priority',        # solo per avere colori diversi
+        color_discrete_sequence=px.colors.qualitative.Set3  # palette di colori diversi
     )
     
     fig_ko_priority.update_layout(
@@ -369,11 +370,12 @@ def main_display():
         showlegend=False
     )
     
-    # Testo sopra le barre
+    # Mostriamo il numero assoluto sopra le barre
     fig_ko_priority.update_traces(texttemplate='%{text}', textposition='outside')
     
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
+
 
 if __name__ == "__main__":
     main_display()
