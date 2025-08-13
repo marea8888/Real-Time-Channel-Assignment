@@ -406,7 +406,7 @@ def main_display():
 
     st.markdown("---")    
     # Calcoliamo il totale richieste per stakeholder
-    total_requests = filtered.groupby('Stakeholder ID').size().reset_index(name='Total')
+    total_requests = filtered.groupby('Stakeholder ID').size().reset_index(name='total_count')
     
     # Conteggio KO per Stakeholder
     ko_global_counts = ko_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
