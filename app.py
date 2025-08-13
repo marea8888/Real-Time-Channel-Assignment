@@ -416,7 +416,7 @@ def main_display():
     # Facciamo il grafico a barre orizzontali (più leggibile per classifiche)
     fig_global_ko = go.Figure(go.Bar(
         x=ko_global_counts['KO_count'],
-        y=ko_global_counts['Stakeholder'],
+        y=ko_global_counts['Stakeholder ID'],
         orientation='h',
         marker_color='#EF553B',
         text=ko_global_counts['KO_count'],
