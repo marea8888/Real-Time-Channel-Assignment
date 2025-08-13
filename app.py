@@ -404,5 +404,38 @@ def main_display():
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
+    st.markdown("---")
+    st.subheader("🏆 Classifica Stakeholder con più NOT ASSIGNED (totale)")
+    
+    # KO su tutti i dati, ignorando i filtri
+    ko_global_df = df_all[(df_all[col_bx].isna()) & ~(df_all[col_pnrf].str.strip() == "MoD")].copy()
+    
+    # Conteggio KO per Stakeholder
+    ko_global_counts = ko_global_df.groupby('Stakeholder').size().reset_index(name='KO_count')
+    
+    # Ordiniamo in ordine decrescente
+    ko_global_counts = ko_global_counts.sort_values(by='KO_count', ascending=False)
+    
+    # Facciamo il grafico a barre orizzontali (più leggibile per classifiche)
+    fig_global_ko = go.Figure(go.Bar(
+        x=ko_global_counts['KO_count'],
+        y=ko_global_counts['Stakeholder'],
+        orientation='h',
+        marker_color='#EF553B',
+        text=ko_global_counts['KO_count'],
+        texttemplate='<b>%{text}</b>',
+        textposition='outside',
+        textfont=dict(size=16)
+    ))
+    
+    fig_global_ko.update_layout(
+        xaxis_title='Number of NOT ASSIGNED',
+        yaxis_title='Stakeholder',
+        yaxis=dict(autorange='reversed'),  # mette il più alto in cima
+        margin=dict(l=150, r=50, t=50, b=50)
+    )
+    
+    st.plotly_chart(fig_global_ko, use_container_width=True)
+    
 if __name__ == "__main__":
     main_display()
