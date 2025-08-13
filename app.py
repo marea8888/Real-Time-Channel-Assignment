@@ -336,10 +336,7 @@ def main_display():
     # --- Static Stats on raw data ---
     st.markdown("---")
     st.subheader("📊 Overall Statistics (All Data)")
-    
-    # Filtriamo i KO
-    ko_df = df[df['Result'] == 'NOT ASSIGNED']
-    
+       
     # Creiamo l'istogramma dei KO per Priorità
     fig_ko_priority = px.histogram(
         ko_df,
