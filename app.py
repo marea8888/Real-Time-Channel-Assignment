@@ -411,7 +411,7 @@ def main_display():
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
     
     # Conteggio KO per Stakeholder
-    ko_global_counts = ko_global_df.groupby('Stakeholder').size().reset_index(name='KO_count')
+    ko_global_counts = ko_global_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
     
     # Ordiniamo in ordine decrescente
     ko_global_counts = ko_global_counts.sort_values(by='KO_count', ascending=False)
