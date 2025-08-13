@@ -337,18 +337,10 @@ def main_display():
     st.markdown("---")
     st.subheader("📊 Overall Statistics (All Data)")
     
-    # Example: total requests per service
-    service_counts = _df.groupby(col_service)[col_request].nunique().sort_values(ascending=False)
-    st.markdown("**Total requests per service:**")
-    st.bar_chart(service_counts)
-    
-    # Filtriamo solo i KO
-    df_ko = df_filtered[df_filtered['Status'] == 'NOT ASSIGNED']
-    
     # Creiamo l'istogramma dei KO per Priorità
     fig_ko_priority = px.histogram(
-        df_ko,
-        x='Priority',       # colonna Priorità
+        ko_df,
+        x='Priority Indicator per Stakeholder',       # colonna Priorità
         title='KO per Priorità',
         labels={'Priority': 'Priorità', 'count': 'Numero di KO'},
         color='Priority',   # opzionale: colori diversi per priorità
