@@ -342,15 +342,15 @@ def main_display():
         ko_df,
         x='Priority Indicator per Stakeholder',  # nome esatto della colonna
         labels={
-            'Priority Indicator per Stakeholder': 'Priorità', 
-            'count': 'Numero di KO'
+            'Priority Indicator per Stakeholder': 'Priority', 
+            'count': 'Number of NOT ASSIGNED'
         },
         color='Priority Indicator per Stakeholder',  # opzionale: colori diversi per priorità
     )
     
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
-        yaxis_title='Num of NOT ASSIGNED',
+        yaxis_title='Number of NOT ASSIGNED',
         showlegend=False
     )
     
