@@ -356,51 +356,37 @@ def main_display():
         if p not in ko_counts['Priority'].values:
             ko_counts = pd.concat([ko_counts, pd.DataFrame({'Priority':[p], 'Count':[0], 'Priority Indicator per Stakeholder':[p], 'Total':[total_per_priority['Total'].mean()], 'Percentage':[0]})], ignore_index=True)
     
-    # Palette colori diversa per ogni barra
-    palette = px.colors.qualitative.Set3
-    colors = {p: palette[i % len(palette)] for i, p in enumerate(all_priorities)}
+    # Colori per priorità (assicurati che siano stringhe uguali a quelle in 'Priority Indicator per Stakeholder')
+    colors = {'1': '#636EFA', '2': '#EF553B', '3': '#00CC96', '4': '#AB63FA'}
     
-    # Creiamo il grafico a barre senza colorbar
-    fig_ko_priority = px.bar(
-        ko_counts,
-        x='Priority',
-        y='Percentage',
-        text='Count',  # numero assoluto sopra la barra
-        labels={
-            'Priority': 'Priority',
-            'Percentage': '% NOT ASSIGNED'
-        },
-        category_orders={'Priority': all_priorities}  # asse X fisso
-    )
+    fig_ko_priority = go.Figure()
     
-    # Tracce: colori, testo e larghezza barre
-    fig_ko_priority.update_traces(
-        marker_color=[colors[str(p)] for p in ko_counts['Priority']],
-        text=ko_counts['Number'],  # testo sopra le barre: numero assoluto
-        texttemplate='<b>%{text}</b>',  # grassetto
+    fig_ko_priority.add_trace(go.Bar(
+        x=ko_counts['Priority Indicator per Stakeholder'],
+        y=ko_counts['KO_count'] / total_per_priority * 100,  # percentuale rispetto al totale per priorità
+        marker_color=[colors[str(p)] for p in ko_counts['Priority Indicator per Stakeholder']],
+        text=ko_counts['KO_count'],           # numero assoluto sopra le barre
+        texttemplate='<b>%{text}</b>',
         textposition='outside',
-        textfont=dict(size=18),  # dimensione del testo
-        width=0.4  # barre più strette
+        textfont=dict(size=18),
+        width=0.4
+    ))
+    
+    fig_ko_priority.update_layout(
+        xaxis=dict(
+            title='Priority',
+            tickmode='array',
+            tickvals=[1, 2, 3, 4],   # tick fissi
+            ticktext=[1, 2, 3, 4],
+        ),
+        yaxis=dict(
+            title='% NOT ASSIGNED (per Priority)',
+            range=[0, ko_counts['KO_count'].div(total_per_priority).mul(100).max() * 1.2]  # max Y aumentato del 20%
+        ),
+        showlegend=False
     )
     
-    # Layout: asse y più alto, asse x fisso
-    fig_ko_priority.update_layout(
-        xaxis_title='Priority',
-        yaxis_title='% NOT ASSIGNED (per Priority)',
-        yaxis=dict(
-            range=[0, ko_counts['Percentage'].max() * 1.2]  # aumento del 20% sopra il valore massimo
-        ),
-        showlegend=False,
-        xaxis=dict(
-            tickmode='array',
-            tickvals=all_priorities,
-            ticktext=all_priorities,
-        )
-    )
-
-    # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
-
 
 if __name__ == "__main__":
     main_display()
