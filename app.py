@@ -405,7 +405,7 @@ def main_display():
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
     st.markdown("---")    
-    st.subheader("🏆 Stakeholder NOT ASSIGNED Ranking (%)")
+    st.subheader("🏅 Stakeholder NOT ASSIGNED Ranking (%)")
     # Calcoliamo il totale richieste per stakeholder
     total_requests = filtered.groupby('Stakeholder ID').size().reset_index(name='total_count')
     
