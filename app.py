@@ -435,8 +435,7 @@ def main_display():
         y=ko_merged['Stakeholder ID'],
         orientation='h',
         marker_color='#EF553B',
-        text=ko_merged['KO_count'].astype(int),
-        texttemplate='<b>%{text}</b>',
+        text=ko_merged['label_text'],
         textposition='outside',
         textfont=dict(size=14)
     ))
@@ -444,6 +443,7 @@ def main_display():
     fig_global_ko.update_layout(
         xaxis=dict(
             showticklabels=False,  # nasconde l'asse X
+            showgrid=False,
             zeroline=False
         ),
         yaxis=dict(
