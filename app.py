@@ -335,36 +335,29 @@ def main_display():
 
     # --- Static Stats on raw data ---
     st.markdown("---")
-    
-    # Filtriamo i KO
+        
+    # --- KO per priorità ---
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
     
-    # Totale richieste per priorità
-    total_per_priority = filtered.groupby('Priority Indicator per Stakeholder').size().reset_index(name='Total')
+    # Lista delle priorità (1,2,3,4)
+    all_priorities = [1, 2, 3, 4]
     
     # Conteggio KO per priorità
-    ko_counts = ko_df['Priority Indicator per Stakeholder'].value_counts().reset_index()
-    ko_counts.columns = ['Priority', 'Count']
+    ko_counts = ko_df.groupby('Priority Indicator per Stakeholder').size().reindex(all_priorities, fill_value=0).reset_index(name='KO_count')
     
-    # Uniamo e calcoliamo la percentuale
-    ko_counts = ko_counts.merge(total_per_priority, left_on='Priority', right_on='Priority Indicator per Stakeholder', how='left')
-    ko_counts['Percentage'] = (ko_counts['Count'] / ko_counts['Total'] * 100).round(2)
+    # Totale richieste per priorità
+    total_per_priority = filtered.groupby('Priority Indicator per Stakeholder').size().reindex(all_priorities, fill_value=0)
     
-    # Assicuriamoci che tutte le priorità da 1 a 4 siano presenti
-    all_priorities = ['1', '2', '3', '4']
-    for p in all_priorities:
-        if p not in ko_counts['Priority'].values:
-            ko_counts = pd.concat([ko_counts, pd.DataFrame({'Priority':[p], 'Count':[0], 'Priority Indicator per Stakeholder':[p], 'Total':[total_per_priority['Total'].mean()], 'Percentage':[0]})], ignore_index=True)
+    # Colori fissi per priorità
+    colors = {1: '#636EFA', 2: '#EF553B', 3: '#00CC96', 4: '#AB63FA'}
     
-    # Colori per priorità (assicurati che siano stringhe uguali a quelle in 'Priority Indicator per Stakeholder')
-    colors = {'1': '#636EFA', '2': '#EF553B', '3': '#00CC96', '4': '#AB63FA'}
-    
+    # Creiamo il grafico
     fig_ko_priority = go.Figure()
     
     fig_ko_priority.add_trace(go.Bar(
         x=ko_counts['Priority Indicator per Stakeholder'],
-        y=ko_counts['KO_count'] / total_per_priority * 100,  # percentuale rispetto al totale per priorità
-        marker_color=[colors[str(p)] for p in ko_counts['Priority Indicator per Stakeholder']],
+        y=(ko_counts['KO_count'] / total_per_priority * 100).values,  # percentuale
+        marker_color=[colors[p] for p in ko_counts['Priority Indicator per Stakeholder']],
         text=ko_counts['KO_count'],           # numero assoluto sopra le barre
         texttemplate='<b>%{text}</b>',
         textposition='outside',
@@ -372,16 +365,17 @@ def main_display():
         width=0.4
     ))
     
+    # Layout grafico
     fig_ko_priority.update_layout(
         xaxis=dict(
             title='Priority',
             tickmode='array',
-            tickvals=[1, 2, 3, 4],   # tick fissi
+            tickvals=[1, 2, 3, 4],
             ticktext=[1, 2, 3, 4],
         ),
         yaxis=dict(
             title='% NOT ASSIGNED (per Priority)',
-            range=[0, ko_counts['KO_count'].div(total_per_priority).mul(100).max() * 1.2]  # max Y aumentato del 20%
+            range=[0, max((ko_counts['KO_count'] / total_per_priority * 100).values) * 1.2]
         ),
         showlegend=False
     )
