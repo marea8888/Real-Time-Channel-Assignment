@@ -342,35 +342,26 @@ def main_display():
     st.markdown("**Total requests per service:**")
     st.bar_chart(service_counts)
     
-    # Example: overall assigned vs not assigned
-    assigned_overall = _df[col_bx].notna().sum()
-    not_assigned_overall = _df[col_bx].isna().sum()
-    mod_overall = (_df[col_pnrf].astype(str).str.strip() == "MoD").sum()
+    # Filtriamo solo i KO
+    df_ko = df_filtered[df_filtered['Status'] == 'KO']
     
-    overall_stats = pd.DataFrame({
-        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
-        'Count': [assigned_overall, not_assigned_overall, mod_overall]
-    })
+    # Creiamo l'istogramma dei KO per Priorità
+    fig_ko_priority = px.histogram(
+        df_ko,
+        x='Priority',       # colonna Priorità
+        title='KO per Priorità',
+        labels={'Priority': 'Priorità', 'count': 'Numero di KO'},
+        color='Priority',   # opzionale: colori diversi per priorità
+    )
     
-    fig_overall = px.pie(
-        overall_stats,
-        names='Status', values='Count', hole=0.6, template='plotly',
-        color_discrete_map={
-            'ASSIGNED': '#2ECC71',
-            'NOT ASSIGNED': '#E74C3C',
-            'MoD COORDINATION': '#F1C40F'
-        }
+    fig_ko_priority.update_layout(
+        xaxis_title='Priorità',
+        yaxis_title='Numero di KO',
+        showlegend=False
     )
-    fig_overall.update_traces(
-        textinfo='percent',
-        texttemplate='%{percent:.1%} (%{value})',
-        textfont=dict(size=18),
-        textposition='outside',
-        pull=[0.1]*len(overall_stats),
-        marker=dict(line=dict(color='#FFF', width=2))
-    )
-    st.plotly_chart(fig_overall, use_container_width=True)
-
+    
+    # Mostriamo il plot come ultimo nella pagina
+    st.plotly_chart(fig_ko_priority, use_container_width=True)
 
 if __name__ == "__main__":
     main_display()
