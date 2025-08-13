@@ -441,7 +441,6 @@ def main_display():
     fig_global_ko.update_layout(
         xaxis=dict(
             showticklabels=False,  # nasconde l'asse X
-            showgrid=true,
             zeroline=False
         ),
         yaxis=dict(
