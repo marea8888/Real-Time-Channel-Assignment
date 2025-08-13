@@ -405,31 +405,50 @@ def main_display():
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
     st.markdown("---")    
+    # Calcoliamo il totale richieste per stakeholder
+    total_requests = filtered.groupby('Stakeholder ID').size().reset_index(name='Total')
+    
     # Conteggio KO per Stakeholder
     ko_global_counts = ko_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
     
-    # Ordiniamo in ordine decrescente
-    ko_global_counts = ko_global_counts.sort_values(by='KO_count', ascending=False)
+    # Uniamo totale e KO
+    ko_merged = ko_global_counts.merge(total_requests, on='Stakeholder ID', how='right').fillna(0)
     
-    # Facciamo il grafico a barre orizzontali (più leggibile per classifiche)
+    # Percentuale di KO
+    ko_merged['KO_percent'] = (ko_merged['KO_count'] / ko_merged['total_count'] * 100).round(1)
+    
+    # Ordiniamo in base alla percentuale decrescente
+    ko_merged = ko_merged.sort_values(by='KO_percent', ascending=False)
+    
+    # Dimensione dinamica del grafico in base al numero di stakeholder
+    height_fig = max(400, ko_merged.shape[0] * 30)  # almeno 400px, poi 30px per ogni stakeholder
+    
+    # Facciamo il grafico a barre orizzontali
     fig_global_ko = go.Figure(go.Bar(
-        x=ko_global_counts['KO_count'],
-        y=ko_global_counts['Stakeholder ID'],
+        x=ko_merged['KO_percent'],
+        y=ko_merged['Stakeholder ID'],
         orientation='h',
         marker_color='#EF553B',
-        text=ko_global_counts['KO_count'],
+        text=ko_merged['KO_count'].astype(int),
         texttemplate='<b>%{text}</b>',
         textposition='outside',
-        textfont=dict(size=16)
+        textfont=dict(size=14)
     ))
     
     fig_global_ko.update_layout(
-        xaxis_title='# NOT ASSIGNED',
-        yaxis=dict(autorange='reversed'),  # mette il più alto in cima
-        margin=dict(l=150, r=50, t=50, b=50)
+        xaxis=dict(
+            showticklabels=False,  # nasconde l'asse X
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis=dict(
+            autorange='reversed'  # mette il più alto in cima
+        ),
+        margin=dict(l=150, r=50, t=50, b=50),
+        height=height_fig
     )
     
     st.plotly_chart(fig_global_ko, use_container_width=True)
-    
+        
 if __name__ == "__main__":
     main_display()
