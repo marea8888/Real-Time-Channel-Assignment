@@ -376,10 +376,11 @@ def main_display():
     # Tracce: colori, testo e larghezza barre
     fig_ko_priority.update_traces(
         marker_color=[colors[str(p)] for p in ko_counts['Priority']],
-        texttemplate='<b>%{text}</b>',
+        text=ko_counts['Number'],  # testo sopra le barre: numero assoluto
+        texttemplate='<b>%{text}</b>',  # grassetto
         textposition='outside',
-        textfont_size=18,
-        width=0.4  # riduce la larghezza delle barre
+        textfont=dict(size=18),  # dimensione del testo
+        width=0.4  # barre più strette
     )
     
     # Layout: asse y più alto, asse x fisso
@@ -397,7 +398,6 @@ def main_display():
         )
     )
 
-    
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
