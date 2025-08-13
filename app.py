@@ -341,7 +341,6 @@ def main_display():
     fig_ko_priority = px.histogram(
         ko_df,
         x='Priority Indicator per Stakeholder',  # nome esatto della colonna
-        title='KO per Priorità',
         labels={
             'Priority Indicator per Stakeholder': 'Priorità', 
             'count': 'Numero di KO'
