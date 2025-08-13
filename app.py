@@ -388,7 +388,7 @@ def main_display():
     
     # Layout
     fig_ko_priority.update_layout(
-        xaxis_title='Priority',
+        xaxis_title='Stakeholder Priority',
         yaxis_title='% NOT ASSIGNED',
         yaxis=dict(
         range=[0, ko_counts['Percentage'].max() * 1.2]  # aumento del 20% sopra il valore massimo
