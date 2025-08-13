@@ -155,6 +155,9 @@ def make_fig(data):
     return fig
 
 def stats_fig(df_all):
+    fig = None
+    tmp_status_fig = None
+    
     # Verifica se ci sono dati disponibili prima di generare i grafici
     if df_all.empty:
         return None, None  # Se i dati sono vuoti, non restituire grafici
