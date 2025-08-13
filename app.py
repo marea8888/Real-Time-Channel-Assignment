@@ -336,21 +336,25 @@ def main_display():
     # --- Static Stats on raw data ---
     st.markdown("---")
     
-    # Filtriamo i KO come prima
+    # Filtriamo i KO
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
     
-    # Calcoliamo totale richieste per ogni priorità
+    # Totale richieste per priorità
     total_per_priority = filtered.groupby('Priority Indicator per Stakeholder').size().reset_index(name='Total')
     
     # Conteggio KO per priorità
     ko_counts = ko_df['Priority Indicator per Stakeholder'].value_counts().reset_index()
     ko_counts.columns = ['Priority', 'Count']
     
-    # Uniamo le due tabelle
+    # Uniamo e calcoliamo la percentuale
     ko_counts = ko_counts.merge(total_per_priority, left_on='Priority', right_on='Priority Indicator per Stakeholder', how='left')
     ko_counts['Percentage'] = (ko_counts['Count'] / ko_counts['Total'] * 100).round(2)
     
-    # Creiamo l'istogramma a barre semplice
+    # Palette colori diversa per ogni barra
+    palette = px.colors.qualitative.Set3
+    colors = {p: palette[i % len(palette)] for i, p in enumerate(ko_counts['Priority'])}
+    
+    # Creiamo il grafico a barre senza colorbar
     fig_ko_priority = px.bar(
         ko_counts,
         x='Priority',
@@ -360,22 +364,21 @@ def main_display():
             'Priority': 'Priority',
             'Percentage': '% NOT ASSIGNED'
         },
-        color='Priority',        # solo per avere colori diversi
-        color_discrete_sequence=px.colors.qualitative.Set3  # palette di colori diversi
     )
     
+    # Applichiamo colori diversi manualmente
+    fig_ko_priority.update_traces(marker_color=[colors[p] for p in ko_counts['Priority']],
+                                  texttemplate='%{text}', textposition='outside')
+    
+    # Layout
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
         yaxis_title='% NOT ASSIGNED (per Priority)',
-        showlegend=False
+        showlegend=False  # niente legenda/colorbar
     )
-    
-    # Mostriamo il numero assoluto sopra le barre
-    fig_ko_priority.update_traces(texttemplate='%{text}', textposition='outside')
     
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
-
 
 if __name__ == "__main__":
     main_display()
