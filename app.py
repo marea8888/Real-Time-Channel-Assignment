@@ -413,7 +413,10 @@ def main_display():
     
     # Uniamo totale e KO
     ko_merged = ko_global_counts.merge(total_requests, on='Stakeholder ID', how='right').fillna(0)
-    
+
+    # Filtriamo gli stakeholder con KO_count > 0
+    ko_merged = ko_merged[ko_merged['KO_count'] > 0]
+
     # Percentuale di KO
     ko_merged['KO_percent'] = (ko_merged['KO_count'] / ko_merged['total_count'] * 100).round(1)
     
@@ -438,7 +441,7 @@ def main_display():
     fig_global_ko.update_layout(
         xaxis=dict(
             showticklabels=False,  # nasconde l'asse X
-            showgrid=False,
+            showgrid=true,
             zeroline=False
         ),
         yaxis=dict(
