@@ -382,7 +382,7 @@ def main_display():
         marker_color=[colors[str(p)] for p in ko_counts['Priority']],  # <- convertiamo in str
         texttemplate='<b>%{text}</b>',
         textposition='outside',
-        textfont_size=18  # numero sopra le barre più grande
+        textfont_size=18,  # numero sopra le barre più grande
         width=0.4
     )
     
