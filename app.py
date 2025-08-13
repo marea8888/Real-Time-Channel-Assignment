@@ -343,7 +343,7 @@ def main_display():
         x='Priority Indicator per Stakeholder',       # colonna Priorità
         title='KO per Priorità',
         labels={'Priority': 'Priorità', 'count': 'Numero di KO'},
-        color='Priority',   # opzionale: colori diversi per priorità
+        color='Priority Indicator per Stakeholder',   # opzionale: colori diversi per priorità
     )
     
     fig_ko_priority.update_layout(
