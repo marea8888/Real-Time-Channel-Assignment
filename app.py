@@ -335,7 +335,6 @@ def main_display():
 
     # --- Static Stats on raw data ---
     st.markdown("---")
-    st.subheader("📊 Overall Statistics (All Data)")
        
     # Creiamo l'istogramma dei KO per Priorità
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
@@ -351,8 +350,8 @@ def main_display():
     )
     
     fig_ko_priority.update_layout(
-        xaxis_title='Priorità',
-        yaxis_title='Numero di KO',
+        xaxis_title='Priority',
+        yaxis_title='Num of NOT ASSIGNED',
         showlegend=False
     )
     
