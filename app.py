@@ -375,7 +375,7 @@ def main_display():
     
     # Applichiamo colori diversi manualmente e formattazione testo
     fig_ko_priority.update_traces(
-        marker_color=[colors[p] for p in ko_counts['Priority']],
+        marker_color=[colors[str(p)] for p in ko_counts['Priority']],
         texttemplate='<b>%{text}</b>',
         textposition='outside',
         textfont_size=18  # numero sopra le barre più grande
