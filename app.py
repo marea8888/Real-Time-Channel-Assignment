@@ -333,5 +333,44 @@ def main_display():
     else:
         st.dataframe(ko_df, use_container_width=True)
 
+    # --- Static Stats on raw data ---
+    st.markdown("---")
+    st.subheader("📊 Overall Statistics (All Data)")
+    
+    # Example: total requests per service
+    service_counts = _df.groupby(col_service)[col_request].nunique().sort_values(ascending=False)
+    st.markdown("**Total requests per service:**")
+    st.bar_chart(service_counts)
+    
+    # Example: overall assigned vs not assigned
+    assigned_overall = _df[col_bx].notna().sum()
+    not_assigned_overall = _df[col_bx].isna().sum()
+    mod_overall = (_df[col_pnrf].astype(str).str.strip() == "MoD").sum()
+    
+    overall_stats = pd.DataFrame({
+        'Status': ['ASSIGNED', 'NOT ASSIGNED', 'MoD COORDINATION'],
+        'Count': [assigned_overall, not_assigned_overall, mod_overall]
+    })
+    
+    fig_overall = px.pie(
+        overall_stats,
+        names='Status', values='Count', hole=0.6, template='plotly',
+        color_discrete_map={
+            'ASSIGNED': '#2ECC71',
+            'NOT ASSIGNED': '#E74C3C',
+            'MoD COORDINATION': '#F1C40F'
+        }
+    )
+    fig_overall.update_traces(
+        textinfo='percent',
+        texttemplate='%{percent:.1%} (%{value})',
+        textfont=dict(size=18),
+        textposition='outside',
+        pull=[0.1]*len(overall_stats),
+        marker=dict(line=dict(color='#FFF', width=2))
+    )
+    st.plotly_chart(fig_overall, use_container_width=True)
+
+
 if __name__ == "__main__":
     main_display()
