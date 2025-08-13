@@ -338,6 +338,7 @@ def main_display():
     st.subheader("📊 Overall Statistics (All Data)")
        
     # Creiamo l'istogramma dei KO per Priorità
+    ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
     fig_ko_priority = px.histogram(
         ko_df,
         x='Priority Indicator per Stakeholder',  # nome esatto della colonna
