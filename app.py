@@ -350,7 +350,7 @@ def main_display():
     
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
-        yaxis_title='Number of NOT ASSIGNED',
+        yaxis_title='#NOT ASSIGNED',
         showlegend=False
     )
     
