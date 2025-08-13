@@ -365,20 +365,30 @@ def main_display():
         width=0.4
     ))
     
-    # Layout grafico
-    fig_ko_priority.update_layout(
-        xaxis=dict(
-            title='Priority',
-            tickmode='array',
-            tickvals=[1, 2, 3, 4],
-            ticktext=[1, 2, 3, 4],
-        ),
-        yaxis=dict(
-            title='% NOT ASSIGNED (per Priority)',
-            range=[0, max((ko_counts['KO_count'] / total_per_priority * 100).values) * 1.2]
-        ),
-        showlegend=False
+    # Tracce: colori, testo e larghezza barre
+    fig_ko_priority.update_traces(
+        marker_color=[colors[str(p)] for p in ko_counts['Priority']],
+        texttemplate='<b>%{text}</b>',
+        textposition='outside',
+        textfont_size=18,
+        width=0.4  # riduce la larghezza delle barre
     )
+    
+    # Layout: asse y più alto, asse x fisso
+    fig_ko_priority.update_layout(
+        xaxis_title='Priority',
+        yaxis_title='% NOT ASSIGNED (per Priority)',
+        yaxis=dict(
+            range=[0, ko_counts['Percentage'].max() * 1.2]  # aumento del 20% sopra il valore massimo
+        ),
+        showlegend=False,
+        xaxis=dict(
+            tickmode='array',
+            tickvals=all_priorities,
+            ticktext=all_priorities,
+        )
+    )
+
     
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
