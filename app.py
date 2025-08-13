@@ -446,6 +446,7 @@ def main_display():
             showgrid=False,
             zeroline=False
         ),
+        xaxis_title='% NOT ASSIGNED',
         yaxis=dict(
             autorange='reversed'  # mette il più alto in cima
         ),
