@@ -335,26 +335,44 @@ def main_display():
 
     # --- Static Stats on raw data ---
     st.markdown("---")
-       
-    # Creiamo l'istogramma dei KO per Priorità
+    
+    # Filtriamo i KO come prima
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
-    fig_ko_priority = px.histogram(
-        ko_df,
-        x='Priority Indicator per Stakeholder',  # nome esatto della colonna
+    
+    # Calcoliamo totale richieste per ogni priorità
+    total_per_priority = filtered.groupby('Priority Indicator per Stakeholder').size().reset_index(name='Total')
+    
+    # Conteggio KO per priorità
+    ko_counts = ko_df['Priority Indicator per Stakeholder'].value_counts().reset_index()
+    ko_counts.columns = ['Priority', 'Count']
+    
+    # Uniamo le due tabelle
+    ko_counts = ko_counts.merge(total_per_priority, left_on='Priority', right_on='Priority Indicator per Stakeholder', how='left')
+    ko_counts['Percentage'] = (ko_counts['Count'] / ko_counts['Total'] * 100).round(2)
+    
+    # Creiamo l'istogramma
+    fig_ko_priority = px.bar(
+        ko_counts,
+        x='Priority',
+        y='Percentage',
+        text='Count',  # numero assoluto sopra la barra
         labels={
-            'Priority Indicator per Stakeholder': 'Priority', 
-            'count': 'Number of NOT ASSIGNED'
+            'Priority': 'Priority',
+            'Percentage': '% NOT ASSIGNED'
         },
-        color='Priority Indicator per Stakeholder',  # opzionale: colori diversi per priorità
+        color='Priority',
     )
     
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
-        yaxis_title='#NOT ASSIGNED',
+        yaxis_title='% NOT ASSIGNED (per Priority)',
         showlegend=False
     )
     
-    # Mostriamo il plot come ultimo nella pagina
+    # Testo sopra le barre
+    fig_ko_priority.update_traces(texttemplate='%{text}', textposition='outside')
+    
+    # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
 if __name__ == "__main__":
