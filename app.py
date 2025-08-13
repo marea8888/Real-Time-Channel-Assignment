@@ -337,13 +337,19 @@ def main_display():
     st.markdown("---")
     st.subheader("📊 Overall Statistics (All Data)")
     
+    # Filtriamo i KO
+    ko_df = df[df['Result'] == 'NOT ASSIGNED']
+    
     # Creiamo l'istogramma dei KO per Priorità
     fig_ko_priority = px.histogram(
         ko_df,
-        x='Priority Indicator per Stakeholder',       # colonna Priorità
+        x='Priority Indicator per Stakeholder',  # nome esatto della colonna
         title='KO per Priorità',
-        labels={'Priority': 'Priorità', 'count': 'Numero di KO'},
-        color='Priority Indicator per Stakeholder',   # opzionale: colori diversi per priorità
+        labels={
+            'Priority Indicator per Stakeholder': 'Priorità', 
+            'count': 'Numero di KO'
+        },
+        color='Priority Indicator per Stakeholder',  # opzionale: colori diversi per priorità
     )
     
     fig_ko_priority.update_layout(
