@@ -350,9 +350,15 @@ def main_display():
     ko_counts = ko_counts.merge(total_per_priority, left_on='Priority', right_on='Priority Indicator per Stakeholder', how='left')
     ko_counts['Percentage'] = (ko_counts['Count'] / ko_counts['Total'] * 100).round(2)
     
+    # Assicuriamoci che tutte le priorità da 1 a 4 siano presenti
+    all_priorities = ['1', '2', '3', '4']
+    for p in all_priorities:
+        if p not in ko_counts['Priority'].values:
+            ko_counts = pd.concat([ko_counts, pd.DataFrame({'Priority':[p], 'Count':[0], 'Priority Indicator per Stakeholder':[p], 'Total':[total_per_priority['Total'].mean()], 'Percentage':[0]})], ignore_index=True)
+    
     # Palette colori diversa per ogni barra
     palette = px.colors.qualitative.Set3
-    colors = {p: palette[i % len(palette)] for i, p in enumerate(ko_counts['Priority'])}
+    colors = {p: palette[i % len(palette)] for i, p in enumerate(all_priorities)}
     
     # Creiamo il grafico a barre senza colorbar
     fig_ko_priority = px.bar(
@@ -364,21 +370,32 @@ def main_display():
             'Priority': 'Priority',
             'Percentage': '% NOT ASSIGNED'
         },
+        category_orders={'Priority': all_priorities}  # asse X fisso
     )
     
-    # Applichiamo colori diversi manualmente
-    fig_ko_priority.update_traces(marker_color=[colors[p] for p in ko_counts['Priority']],
-                                  texttemplate='%{text}', textposition='outside')
+    # Applichiamo colori diversi manualmente e formattazione testo
+    fig_ko_priority.update_traces(
+        marker_color=[colors[p] for p in ko_counts['Priority']],
+        texttemplate='<b>%{text}</b>',
+        textposition='outside',
+        textfont_size=18  # numero sopra le barre più grande
+    )
     
     # Layout
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
         yaxis_title='% NOT ASSIGNED',
-        showlegend=False  # niente legenda/colorbar
+        showlegend=False,
+        xaxis=dict(
+            tickmode='array',
+            tickvals=all_priorities,
+            ticktext=all_priorities,
+        )
     )
     
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
+
 
 if __name__ == "__main__":
     main_display()
