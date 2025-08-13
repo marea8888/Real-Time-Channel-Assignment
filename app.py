@@ -373,18 +373,22 @@ def main_display():
         category_orders={'Priority': all_priorities}  # asse X fisso
     )
     
-    # Applichiamo colori diversi manualmente e formattazione testo
+    # Tracce: colori, testo e larghezza barre
     fig_ko_priority.update_traces(
         marker_color=[colors[str(p)] for p in ko_counts['Priority']],
         texttemplate='<b>%{text}</b>',
         textposition='outside',
-        textfont_size=18  # numero sopra le barre più grande
+        textfont_size=18,
+        width=0.4  # riduce la larghezza delle barre
     )
     
-    # Layout
+    # Layout: asse y più alto, asse x fisso
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
-        yaxis_title='% NOT ASSIGNED',
+        yaxis_title='% NOT ASSIGNED (per Priority)',
+        yaxis=dict(
+            range=[0, ko_counts['Percentage'].max() * 1.2]  # aumento del 20% sopra il valore massimo
+        ),
         showlegend=False,
         xaxis=dict(
             tickmode='array',
@@ -392,6 +396,7 @@ def main_display():
             ticktext=all_priorities,
         )
     )
+
     
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
