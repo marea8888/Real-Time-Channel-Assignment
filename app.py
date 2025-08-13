@@ -408,7 +408,7 @@ def main_display():
     st.subheader("🏆 Classifica Stakeholder con più NOT ASSIGNED (totale)")
     
     # KO su tutti i dati, ignorando i filtri
-    ko_global_df = df_all[(df_all[col_bx].isna()) & ~(df_all[col_pnrf].str.strip() == "MoD")].copy()
+    ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
     
     # Conteggio KO per Stakeholder
     ko_global_counts = ko_global_df.groupby('Stakeholder').size().reset_index(name='KO_count')
