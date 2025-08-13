@@ -343,7 +343,7 @@ def main_display():
     st.bar_chart(service_counts)
     
     # Filtriamo solo i KO
-    df_ko = df_filtered[df_filtered['Status'] == 'KO']
+    df_ko = df_filtered[df_filtered['Status'] == 'NOT ASSIGNED']
     
     # Creiamo l'istogramma dei KO per Priorità
     fig_ko_priority = px.histogram(
