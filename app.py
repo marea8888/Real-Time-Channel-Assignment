@@ -404,9 +404,7 @@ def main_display():
     # Mostriamo il plot
     st.plotly_chart(fig_ko_priority, use_container_width=True)
 
-    st.markdown("---")
-    st.subheader("🏆 Classifica Stakeholder con più NOT ASSIGNED (totale)")
-    
+    st.markdown("---")    
     # Conteggio KO per Stakeholder
     ko_global_counts = ko_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
     
@@ -426,8 +424,7 @@ def main_display():
     ))
     
     fig_global_ko.update_layout(
-        xaxis_title='Number of NOT ASSIGNED',
-        yaxis_title='Stakeholder',
+        xaxis_title='# NOT ASSIGNED',
         yaxis=dict(autorange='reversed'),  # mette il più alto in cima
         margin=dict(l=150, r=50, t=50, b=50)
     )
