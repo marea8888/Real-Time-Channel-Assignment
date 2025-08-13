@@ -383,12 +383,16 @@ def main_display():
         texttemplate='<b>%{text}</b>',
         textposition='outside',
         textfont_size=18  # numero sopra le barre più grande
+        width=0.4
     )
     
     # Layout
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
-        yaxis_title='% NOT ASSIGNED (per Priority)',
+        yaxis_title='% NOT ASSIGNED',
+        yaxis=dict(
+        range=[0, ko_counts['Percentage'].max() * 1.2]  # aumento del 20% sopra il valore massimo
+        ),
         showlegend=False,
         xaxis=dict(
             tickmode='array',
