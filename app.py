@@ -373,7 +373,7 @@ def main_display():
     # Layout
     fig_ko_priority.update_layout(
         xaxis_title='Priority',
-        yaxis_title='% NOT ASSIGNED (per Priority)',
+        yaxis_title='% NOT ASSIGNED',
         showlegend=False  # niente legenda/colorbar
     )
     
