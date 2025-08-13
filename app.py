@@ -425,6 +425,9 @@ def main_display():
     
     # Dimensione dinamica del grafico in base al numero di stakeholder
     height_fig = max(400, ko_merged.shape[0] * 30)  # almeno 400px, poi 30px per ogni stakeholder
+
+    # Creiamo la stringa da mostrare sulle barre
+    ko_merged['label_text'] = ko_merged['KO_count'].astype(int).astype(str) + " (" + ko_merged['KO_percent'].astype(str) + "%)"
     
     # Facciamo il grafico a barre orizzontali
     fig_global_ko = go.Figure(go.Bar(
