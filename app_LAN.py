@@ -30,7 +30,7 @@ COL_VENUE    = "Venue Code"
 COL_STAKE    = "Stakeholder ID"
 COL_REQUEST  = "Request ID"
 COL_PERIOD   = "License Period"
-COL_FINAL    = "FINAL Status"  # opzionale
+COL_FINAL    = "FINAL Status"  # opzionale (non usato in Status view ora)
 
 # ----------------------------
 # Data loading
@@ -115,6 +115,7 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
     return fig
 
 def make_status_pies(df):
+    """Restituisce (pie_totale, pie_final) ma useremo solo pie_totale nella view."""
     if df.empty:
         return None, None
 
@@ -139,16 +140,15 @@ def make_status_pies(df):
         showlegend=True
     )
 
+    # opzionale, non usato nella view
     final_pie = None
     if available(df, COL_FINAL):
         base = df.copy()
         base[COL_FINAL] = base[COL_FINAL].fillna("Not Analysed")
         counts = base[COL_FINAL].value_counts()
         final_stats = pd.DataFrame({"Status": counts.index, "Count": counts.values})
-
         palette = px.colors.qualitative.Set1
         cmap = {status: palette[i % len(palette)] for i, status in enumerate(final_stats["Status"].unique())}
-
         final_pie = px.pie(
             final_stats, names="Status", values="Count", hole=0.6, template="plotly",
             color="Status", color_discrete_map=cmap
@@ -244,25 +244,18 @@ if stake_sel and available(filtered, COL_STAKE):
 # ----------------------------
 # Dashboard order: Status → Map → Table → Spectrum
 # ----------------------------
-st.subheader("Dashboard")
+st.subheader("LAN Assignment — Dashboard")
 
 tab_status, tab_map, tab_table, tab_spectrum = st.tabs(
-    ["📊 Status", "🗺️ Map", "📋 Table", "📡 Spectrum"]
+    ["📊 Status", "🗺️ Map", "📋 Tabella", "📡 Spectrum"]
 )
 
 with tab_status:
-    pie, final_pie = make_status_pies(filtered)
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        if pie is not None:
-            st.plotly_chart(pie, use_container_width=True)
-        else:
-            st.info("Nessun dato per generare lo stato principale.")
-    with c2:
-        if final_pie is not None:
-            st.plotly_chart(final_pie, use_container_width=True)
-        else:
-            st.info("Nessun dato 'FINAL Status' disponibile.")
+    pie, _ = make_status_pies(filtered)  # usiamo SOLO il pie totale
+    if pie is not None:
+        st.plotly_chart(pie, use_container_width=True)
+    else:
+        st.info("Nessun dato per generare lo stato principale.")
 
 with tab_map:
     st.info("🗺️ Mappa in preparazione...")
