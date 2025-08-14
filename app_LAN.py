@@ -74,7 +74,7 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
     min_x, max_x = float(left.min()), float(right.max())
     min_y, max_y = float(data["power_dBm"].min()), float(data["power_dBm"].max())
     dx = max((max_x - min_x) * 0.05, 1.0)
-    dy = max((max_y - min_y) * 0.05, 1.0)
+    dy = max((max_y - min_x) * 0.05, 1.0) if (max_y - min_y) != 0 else 1.0
 
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
@@ -107,7 +107,7 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
         xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
                    minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
                    title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=18, color='#FFF'))),
-        yaxis=dict(range=[min_y - dy, max_y + dy], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
                    minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
                    title=dict(text='<b>Power (dBm)</b>', font=dict(size=18, color='#FFF'))),
         legend=dict(font=dict(color='#FFF'))
@@ -115,14 +115,19 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
     return fig
 
 def make_status_pies(df):
+    """Primo pie: Assigned vs Not Assigned.
+       Secondo pie: FINAL Status calcolato SOLO sui NOT ASSIGNED.
+    """
     if df.empty:
         return None, None
 
+    # Pie principale: Assigned vs Not Assigned
     assigned_count     = int(df[COL_BX].notna().sum()) if available(df, COL_BX) else 0
     not_assigned_count = int(df.shape[0] - assigned_count)
 
-    stats = pd.DataFrame({"Status": ["ASSIGNED", "NOT ASSIGNED"],
-                          "Count":  [assigned_count, not_assigned_count]})
+    stats = pd.DataFrame(
+        {"Status": ["ASSIGNED", "NOT ASSIGNED"], "Count": [assigned_count, not_assigned_count]}
+    )
 
     pie = px.pie(
         stats, names="Status", values="Count", hole=0.6, template="plotly",
@@ -139,30 +144,32 @@ def make_status_pies(df):
         showlegend=True
     )
 
+    # Secondo pie: SOLO per NOT ASSIGNED
     final_pie = None
-    if available(df, COL_FINAL):
-        base = df.copy()
-        base[COL_FINAL] = base[COL_FINAL].fillna("Not Analysed")
-        counts = base[COL_FINAL].value_counts()
-        final_stats = pd.DataFrame({"Status": counts.index, "Count": counts.values})
+    if available(df, COL_FINAL) and available(df, COL_BX):
+        not_assigned_df = df[df[COL_BX].isna()].copy()
+        if not not_assigned_df.empty:
+            not_assigned_df[COL_FINAL] = not_assigned_df[COL_FINAL].fillna("Not Analysed")
+            counts = not_assigned_df[COL_FINAL].value_counts()
+            final_stats = pd.DataFrame({"Status": counts.index, "Count": counts.values})
 
-        palette = px.colors.qualitative.Set1
-        cmap = {status: palette[i % len(palette)] for i, status in enumerate(final_stats["Status"].unique())}
+            palette = px.colors.qualitative.Set1
+            cmap = {status: palette[i % len(palette)] for i, status in enumerate(final_stats["Status"].unique())}
 
-        final_pie = px.pie(
-            final_stats, names="Status", values="Count", hole=0.6, template="plotly",
-            color="Status", color_discrete_map=cmap
-        )
-        final_pie.update_traces(
-            textinfo='percent', texttemplate='%{percent:.1%} (%{value})',
-            textfont=dict(size=16), textposition='outside',
-            marker=dict(line=dict(color='#FFF', width=2))
-        )
-        final_pie.update_layout(
-            margin=dict(l=20, r=20, t=20, b=20),
-            legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.15, yanchor='bottom', font=dict(size=14)),
-            showlegend=True
-        )
+            final_pie = px.pie(
+                final_stats, names="Status", values="Count", hole=0.6, template="plotly",
+                color="Status", color_discrete_map=cmap
+            )
+            final_pie.update_traces(
+                textinfo='percent', texttemplate='%{percent:.1%} (%{value})',
+                textfont=dict(size=16), textposition='outside',
+                marker=dict(line=dict(color='#FFF', width=2))
+            )
+            final_pie.update_layout(
+                margin=dict(l=20, r=20, t=20, b=20),
+                legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.15, yanchor='bottom', font=dict(size=14)),
+                showlegend=True
+            )
 
     return pie, final_pie
 
@@ -244,10 +251,10 @@ if stake_sel and available(filtered, COL_STAKE):
 # ----------------------------
 # Dashboard order: Status → Map → Table → Spectrum
 # ----------------------------
-st.subheader("LAN Assignment — Dashboard")
+st.subheader("Dashboard")
 
 tab_status, tab_map, tab_table, tab_spectrum = st.tabs(
-    ["📊 Status", "🗺️ Map", "📋 Tabella", "📡 Spectrum"]
+    ["📊 Status", "🗺️ Map", "📋 Table", "📡 Spectrum"]
 )
 
 with tab_status:
@@ -262,7 +269,7 @@ with tab_status:
         if final_pie is not None:
             st.plotly_chart(final_pie, use_container_width=True)
         else:
-            st.info("Nessun dato 'FINAL Status' disponibile.")
+            st.info("Nessun dato 'FINAL Status' (solo per NOT ASSIGNED) disponibile.")
 
 with tab_map:
     st.info("🗺️ Mappa in preparazione...")
