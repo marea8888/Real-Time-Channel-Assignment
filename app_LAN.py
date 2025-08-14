@@ -7,7 +7,7 @@ import plotly.express as px
 
 # Page config
 st.set_page_config(
-    page_title="Realtime Frequency Plot",
+    page_title="LAN Assignment",
     layout="wide",
     initial_sidebar_state="expanded"
 )
