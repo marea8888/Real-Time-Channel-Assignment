@@ -56,7 +56,6 @@ def compute_chart_df(df):
     missing = [c for c in req if c not in df.columns]
     if missing:
         return pd.DataFrame(), missing
-
     tmp = df.dropna(subset=[COL_AO, COL_AQ, COL_REQUEST]).copy()
     tmp["center"]     = coerce_numeric(tmp[COL_BX])
     tmp["width_mhz"]  = coerce_numeric(tmp[COL_AO]) / 1000.0
@@ -68,7 +67,6 @@ def compute_chart_df(df):
 def make_spectrum_fig(data, color_by=COL_STAKE):
     if data.empty:
         return None
-
     left  = data["center"] - data["width_mhz"]/2
     right = data["center"] + data["width_mhz"]/2
     min_x, max_x = float(left.min()), float(right.max())
@@ -116,12 +114,11 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
 
 def make_status_pies(df):
     """Primo pie: Assigned vs Not Assigned.
-       Secondo pie: FINAL Status calcolato SOLO sui NOT ASSIGNED.
+       Secondo pie: FINAL Status SOLO sui NOT ASSIGNED.
     """
     if df.empty:
         return None, None
 
-    # Pie principale: Assigned vs Not Assigned
     assigned_count     = int(df[COL_BX].notna().sum()) if available(df, COL_BX) else 0
     not_assigned_count = int(df.shape[0] - assigned_count)
 
@@ -144,7 +141,6 @@ def make_status_pies(df):
         showlegend=True
     )
 
-    # Secondo pie: SOLO per NOT ASSIGNED
     final_pie = None
     if available(df, COL_FINAL) and available(df, COL_BX):
         not_assigned_df = df[df[COL_BX].isna()].copy()
@@ -152,10 +148,8 @@ def make_status_pies(df):
             not_assigned_df[COL_FINAL] = not_assigned_df[COL_FINAL].fillna("Not Analysed")
             counts = not_assigned_df[COL_FINAL].value_counts()
             final_stats = pd.DataFrame({"Status": counts.index, "Count": counts.values})
-
             palette = px.colors.qualitative.Set1
             cmap = {status: palette[i % len(palette)] for i, status in enumerate(final_stats["Status"].unique())}
-
             final_pie = px.pie(
                 final_stats, names="Status", values="Count", hole=0.6, template="plotly",
                 color="Status", color_discrete_map=cmap
@@ -170,7 +164,6 @@ def make_status_pies(df):
                 legend=dict(title='', orientation='h', x=0.5, xanchor='center', y=1.15, yanchor='bottom', font=dict(size=14)),
                 showlegend=True
             )
-
     return pie, final_pie
 
 # ----------------------------
@@ -196,7 +189,7 @@ _df = load_data()
 
 # ============================================================
 # Sidebar: SECTION-AWARE FILTERS (Period → Venue → Stakeholder)
-# When Section == "Map", options are limited to FINAL Status == "JUNIPER"
+# Quando Section == "Map", le opzioni si limitano a FINAL Status == "JUNIPER"
 # ============================================================
 with st.sidebar:
     st.header("🔎 Section (for filters)")
@@ -217,26 +210,23 @@ with st.sidebar:
         period_sel = None
         st.info("Colonna 'License Period' non trovata. Mostro tutti i periodi.")
 
-    # Build the dataframe that drives the options list
+    # Dataframe che guida le OPZIONI dei menù
     df_options = _df.copy()
     if period_sel and available(df_options, COL_PERIOD):
         df_options = df_options[df_options[COL_PERIOD] == period_sel]
-
-    # If Map is the active section for filters, restrict options to JUNIPER
     if section_for_filters == "Map" and available(df_options, COL_FINAL):
         df_options = df_options[df_options[COL_FINAL].astype(str).str.upper() == "JUNIPER"]
 
     st.markdown("---")
-    # Venue FIRST (options derived from df_options)
+    # Venue FIRST
     venue_sel = None
     if available(df_options, COL_VENUE):
         st.header("📍 Venue")
         venues = sorted(df_options[COL_VENUE].dropna().astype(str).unique())
-        default_venues = venues  # preselect all
-        venue_sel = st.multiselect("", venues, default=default_venues, key="venue_sel", label_visibility="collapsed")
+        venue_sel = st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
 
     st.markdown("---")
-    # Stakeholder SECOND (options derived from df_options & chosen venues)
+    # Stakeholder SECOND
     if available(df_options, COL_STAKE):
         st.header("👥 Stakeholder")
         df_stake_scope = df_options.copy()
@@ -248,7 +238,7 @@ with st.sidebar:
         stake_sel = None
 
 # ----------------------------
-# Apply filters to FULL dataset (global, not JUNIPER-limited)
+# Applica filtri al dataset COMPLETO (globale)
 # ----------------------------
 filtered = _df.copy()
 if period_sel and available(filtered, COL_PERIOD):
@@ -258,20 +248,20 @@ if venue_sel and available(filtered, COL_VENUE):
 if stake_sel and available(filtered, COL_STAKE):
     filtered = filtered[filtered[COL_STAKE].astype(str).isin([str(x) for x in stake_sel])]
 
-# For the MAP view we will use a JUNIPER-only subset of `filtered`
+# Subset per la MAPPA: solo JUNIPER
 filtered_map = filtered.copy()
 if available(filtered_map, COL_FINAL):
     filtered_map = filtered_map[filtered_map[COL_FINAL].astype(str).str.upper() == "JUNIPER"]
 
 # ----------------------------
-# Dashboard order: Status → Map → Table → Spectrum
+# RENDER "SEZIONE" SCELTA (niente tabs: resti dove sei)
 # ----------------------------
 st.subheader("LAN Assignment — Dashboard")
-tab_status, tab_map, tab_table, tab_spectrum = st.tabs(
-    ["📊 Status", "🗺️ Map", "📋 Tabella", "📡 Spectrum"]
-)
 
-with tab_status:
+section = st.session_state.get("section_for_filters", "Status")
+
+if section == "Status":
+    st.markdown("## 📊 Status")
     pie, final_pie = make_status_pies(filtered)
     c1, c2 = st.columns([1, 1])
     with c1:
@@ -285,18 +275,17 @@ with tab_status:
         else:
             st.info("Nessun dato 'FINAL Status' (solo per NOT ASSIGNED) disponibile.")
 
-with tab_map:
-    st.markdown("### Map — filtered to FINAL Status = JUNIPER")
+elif section == "Map":
+    st.markdown("## 🗺️ Map (JUNIPER only)")
     if filtered_map.empty:
         st.info("Nessun record con FINAL Status = 'JUNIPER' per i filtri selezionati.")
     else:
-        # placeholder: quando mi dirai come disegnarla, useremo folium/pydeck etc.
-        st.success(f"Records JUNIPER: {len(filtered_map)} (Venue/Stakeholder options in sidebar reflect JUNIPER only)")
-        st.dataframe(filtered_map[[c for c in [COL_VENUE, COL_STAKE, COL_REQUEST, COL_FINAL] if available(filtered_map, c)]],
-                     use_container_width=True, hide_index=True)
+        # Nessuna tabella qui, solo placeholder visivo
+        st.success(f"Records JUNIPER: {len(filtered_map)}")
+        st.info("La mappa verrà aggiunta qui (nessuna tabella visualizzata).")
 
-with tab_table:
-    st.markdown("### Dati filtrati (tutti gli status)")
+elif section == "Table":
+    st.markdown("## 📋 Tabella")
     if filtered.empty:
         st.info("Nessuna riga corrisponde ai filtri selezionati.")
     else:
@@ -310,7 +299,8 @@ with tab_table:
             use_container_width=True
         )
 
-with tab_spectrum:
+elif section == "Spectrum":
+    st.markdown("## 📡 Spectrum")
     chart_df, missing = compute_chart_df(filtered)
     if missing:
         st.error(f"Colonne mancanti per lo spettro: {missing}")
