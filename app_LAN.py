@@ -256,7 +256,7 @@ if available(filtered_map, COL_FINAL):
 # ----------------------------
 # RENDER "SEZIONE" SCELTA (niente tabs: resti dove sei)
 # ----------------------------
-st.subheader("LAN Assignment — Dashboard")
+st.subheader("Dashboard")
 
 section = st.session_state.get("section_for_filters", "Status")
 
@@ -285,7 +285,7 @@ elif section == "Map":
         st.info("La mappa verrà aggiunta qui (nessuna tabella visualizzata).")
 
 elif section == "Table":
-    st.markdown("## 📋 Tabella")
+    st.markdown("## 📋 Table")
     if filtered.empty:
         st.info("Nessuna riga corrisponde ai filtri selezionati.")
     else:
