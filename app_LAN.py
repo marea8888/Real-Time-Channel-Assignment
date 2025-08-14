@@ -242,7 +242,7 @@ if venue_sel and available(filtered, COL_VENUE):
 # ----------------------------
 # Tabs: Spectrum | Status | Table
 # ----------------------------
-st.subheader("LAN Assignment — Dashboard")
+st.subheader("Dashboard")
 
 tab1, tab2, tab3 = st.tabs(["📡 Spectrum", "📊 Status", "📋 Table"])
 
