@@ -244,10 +244,10 @@ if stake_sel and available(filtered, COL_STAKE):
 # ----------------------------
 # Dashboard order: Status → Map → Table → Spectrum
 # ----------------------------
-st.subheader("LAN Assignment — Dashboard")
+st.subheader("Dashboard")
 
 tab_status, tab_map, tab_table, tab_spectrum = st.tabs(
-    ["📊 Status", "🗺️ Map", "📋 Tabella", "📡 Spectrum"]
+    ["📊 Status", "🗺️ Map", "📋 Table", "📡 Spectrum"]
 )
 
 with tab_status:
