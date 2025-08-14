@@ -242,23 +242,15 @@ if stake_sel and available(filtered, COL_STAKE):
     filtered = filtered[filtered[COL_STAKE].astype(str).isin([str(x) for x in stake_sel])]
 
 # ----------------------------
-# Tabs: Spectrum | Status | Tabella
+# Dashboard order: Status → Map → Table → Spectrum
 # ----------------------------
 st.subheader("LAN Assignment — Dashboard")
 
-tab1, tab2, tab3 = st.tabs(["📡 Spectrum", "📊 Status", "📋 Tabella"])
+tab_status, tab_map, tab_table, tab_spectrum = st.tabs(
+    ["📊 Status", "🗺️ Map", "📋 Tabella", "📡 Spectrum"]
+)
 
-with tab1:
-    chart_df, missing = compute_chart_df(filtered)
-    if missing:
-        st.error(f"Colonne mancanti per lo spettro: {missing}")
-    elif chart_df.empty:
-        st.info("Nessun dato disponibile per i filtri selezionati.")
-    else:
-        fig = make_spectrum_fig(chart_df, color_by=COL_STAKE)
-        st.plotly_chart(fig, use_container_width=True)
-
-with tab2:
+with tab_status:
     pie, final_pie = make_status_pies(filtered)
     c1, c2 = st.columns([1, 1])
     with c1:
@@ -272,7 +264,10 @@ with tab2:
         else:
             st.info("Nessun dato 'FINAL Status' disponibile.")
 
-with tab3:
+with tab_map:
+    st.info("🗺️ Mappa in preparazione...")
+
+with tab_table:
     st.markdown("### Dati filtrati")
     if filtered.empty:
         st.info("Nessuna riga corrisponde ai filtri selezionati.")
@@ -286,3 +281,13 @@ with tab3:
             mime="text/csv",
             use_container_width=True
         )
+
+with tab_spectrum:
+    chart_df, missing = compute_chart_df(filtered)
+    if missing:
+        st.error(f"Colonne mancanti per lo spettro: {missing}")
+    elif chart_df.empty:
+        st.info("Nessun dato disponibile per i filtri selezionati.")
+    else:
+        fig = make_spectrum_fig(chart_df, color_by=COL_STAKE)
+        st.plotly_chart(fig, use_container_width=True)
