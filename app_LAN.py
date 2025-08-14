@@ -22,15 +22,15 @@ FILE_ID     = "1y2VzcB93oEJlGxwjBvEIhIdStFooP9O_"
 OUTPUT_FILE = "frequenze.xlsx"
 SHEET       = "ALL NP"
 
-# Column names (must match your file)
-COL_BX       = "Attributed Frequency TX (MHz)"   # center frequency
-COL_AO       = "Channel Bandwidth (kHz)"         # bandwidth
-COL_AQ       = "Transmission Power (W)"          # power
+# Nomi colonne (devono combaciare con il file)
+COL_BX       = "Attributed Frequency TX (MHz)"   # frequenza centrale
+COL_AO       = "Channel Bandwidth (kHz)"         # larghezza canale
+COL_AQ       = "Transmission Power (W)"          # potenza
 COL_VENUE    = "Venue Code"
 COL_STAKE    = "Stakeholder ID"
 COL_REQUEST  = "Request ID"
 COL_PERIOD   = "License Period"
-COL_FINAL    = "FINAL Status"  # optional
+COL_FINAL    = "FINAL Status"  # opzionale
 
 # ----------------------------
 # Data loading
@@ -188,7 +188,7 @@ st.markdown("""
 _df = load_data()
 
 # ----------------------------
-# Sidebar filters (ONLY Period, Stakeholder, Venue)
+# Sidebar filters (ONLY Period → Venue → Stakeholder)
 # ----------------------------
 with st.sidebar:
     st.header("🗓️ Select Period")
@@ -198,32 +198,34 @@ with st.sidebar:
         period_sel = st.selectbox("", period_options, index=default_idx, key="period_sel", label_visibility="collapsed")
     else:
         period_sel = None
-        st.info("Column 'License Period' not found. Showing all periods.")
+        st.info("Colonna 'License Period' non trovata. Mostro tutti i periodi.")
 
     st.markdown("---")
 
-    # Stakeholder
-    if available(_df, COL_STAKE):
-        st.header("👥 Stakeholder")
-        df_scoped = _df[_df[COL_PERIOD] == period_sel] if (period_sel and available(_df, COL_PERIOD)) else _df
-        stakeholders = sorted(df_scoped[COL_STAKE].dropna().astype(str).unique())
-        stake_sel = st.multiselect("", stakeholders, default=stakeholders, key="stake_sel", label_visibility="collapsed")
-    else:
-        stake_sel = None
-
-    st.markdown("---")
-
-    # Venue
+    # Venue FIRST
     venue_sel = None
     if available(_df, COL_VENUE):
         st.header("📍 Venue")
         df_scoped = _df.copy()
         if period_sel and available(df_scoped, COL_PERIOD):
             df_scoped = df_scoped[df_scoped[COL_PERIOD] == period_sel]
-        if stake_sel and available(df_scoped, COL_STAKE):
-            df_scoped = df_scoped[df_scoped[COL_STAKE].astype(str).isin([str(x) for x in stake_sel])]
         venues = sorted(df_scoped[COL_VENUE].dropna().astype(str).unique())
         venue_sel = st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
+
+    st.markdown("---")
+
+    # Stakeholder SECOND
+    if available(_df, COL_STAKE):
+        st.header("👥 Stakeholder")
+        df_scoped = _df.copy()
+        if period_sel and available(df_scoped, COL_PERIOD):
+            df_scoped = df_scoped[df_scoped[COL_PERIOD] == period_sel]
+        if venue_sel and available(df_scoped, COL_VENUE):
+            df_scoped = df_scoped[df_scoped[COL_VENUE].astype(str).isin([str(x) for x in venue_sel])]
+        stakeholders = sorted(df_scoped[COL_STAKE].dropna().astype(str).unique())
+        stake_sel = st.multiselect("", stakeholders, default=stakeholders, key="stake_sel", label_visibility="collapsed")
+    else:
+        stake_sel = None
 
 # ----------------------------
 # Apply filters
@@ -233,25 +235,25 @@ filtered = _df.copy()
 if period_sel and available(filtered, COL_PERIOD):
     filtered = filtered[filtered[COL_PERIOD] == period_sel]
 
-if stake_sel and available(filtered, COL_STAKE):
-    filtered = filtered[filtered[COL_STAKE].astype(str).isin([str(x) for x in stake_sel])]
-
 if venue_sel and available(filtered, COL_VENUE):
     filtered = filtered[filtered[COL_VENUE].astype(str).isin([str(x) for x in venue_sel])]
 
-# ----------------------------
-# Tabs: Spectrum | Status | Table
-# ----------------------------
-st.subheader("Dashboard")
+if stake_sel and available(filtered, COL_STAKE):
+    filtered = filtered[filtered[COL_STAKE].astype(str).isin([str(x) for x in stake_sel])]
 
-tab1, tab2, tab3 = st.tabs(["📡 Spectrum", "📊 Status", "📋 Table"])
+# ----------------------------
+# Tabs: Spectrum | Status | Tabella
+# ----------------------------
+st.subheader("LAN Assignment — Dashboard")
+
+tab1, tab2, tab3 = st.tabs(["📡 Spectrum", "📊 Status", "📋 Tabella"])
 
 with tab1:
     chart_df, missing = compute_chart_df(filtered)
     if missing:
-        st.error(f"Missing columns for spectrum: {missing}")
+        st.error(f"Colonne mancanti per lo spettro: {missing}")
     elif chart_df.empty:
-        st.info("No data available for the selected filters.")
+        st.info("Nessun dato disponibile per i filtri selezionati.")
     else:
         fig = make_spectrum_fig(chart_df, color_by=COL_STAKE)
         st.plotly_chart(fig, use_container_width=True)
@@ -263,22 +265,22 @@ with tab2:
         if pie is not None:
             st.plotly_chart(pie, use_container_width=True)
         else:
-            st.info("No data to compute main status.")
+            st.info("Nessun dato per generare lo stato principale.")
     with c2:
         if final_pie is not None:
             st.plotly_chart(final_pie, use_container_width=True)
         else:
-            st.info("No 'FINAL Status' available.")
+            st.info("Nessun dato 'FINAL Status' disponibile.")
 
 with tab3:
-    st.markdown("### Filtered data")
+    st.markdown("### Dati filtrati")
     if filtered.empty:
-        st.info("No rows match the current filters.")
+        st.info("Nessuna riga corrisponde ai filtri selezionati.")
     else:
         st.dataframe(filtered, use_container_width=True, hide_index=True)
         csv = filtered.to_csv(index=False).encode("utf-8")
         st.download_button(
-            "⬇️ Download filtered CSV",
+            "⬇️ Scarica CSV filtrato",
             data=csv,
             file_name="lan_assignments_filtered.csv",
             mime="text/csv",
