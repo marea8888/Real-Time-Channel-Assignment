@@ -281,7 +281,7 @@ elif section == "Map":
         st.info("Nessun record con FINAL Status = 'JUNIPER' per i filtri selezionati.")
     else:
         # Nessuna tabella qui, solo placeholder visivo
-        st.success(f"Records JUNIPER: {len(filtered_map)}")
+        st.success(f"Records: {len(filtered_map)}")
         st.info("La mappa verrà aggiunta qui (nessuna tabella visualizzata).")
 
 elif section == "Table":
