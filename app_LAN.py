@@ -74,7 +74,7 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
     min_x, max_x = float(left.min()), float(right.max())
     min_y, max_y = float(data["power_dBm"].min()), float(data["power_dBm"].max())
     dx = max((max_x - min_x) * 0.05, 1.0)
-    dy = max((max_y - min_x) * 0.05, 1.0) if (max_y - min_y) != 0 else 1.0
+    dy = max((max_y - min_y) * 0.05, 1.0)
 
     fig = go.Figure()
     palette = px.colors.qualitative.Dark24
@@ -104,7 +104,7 @@ def make_spectrum_fig(data, color_by=COL_STAKE):
     fig.update_layout(
         template='plotly_dark', barmode='overlay', dragmode='zoom',
         plot_bgcolor='#111', paper_bgcolor='#111', font_color='#FFF',
-        xaxis=dict(range=[min_x - dx, max_x + dx], showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
+        xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
                    minor=dict(showgrid=True, gridcolor='rgba(255,255,255,0.2)', gridwidth=1),
                    title=dict(text='<b>Frequency (MHz)</b>', font=dict(size=18, color='#FFF'))),
         yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.5)', gridwidth=1,
@@ -194,67 +194,81 @@ st.markdown("""
 # ----------------------------
 _df = load_data()
 
-# ----------------------------
-# Sidebar filters (ONLY Period → Venue → Stakeholder)
-# ----------------------------
+# ============================================================
+# Sidebar: SECTION-AWARE FILTERS (Period → Venue → Stakeholder)
+# When Section == "Map", options are limited to FINAL Status == "JUNIPER"
+# ============================================================
 with st.sidebar:
+    st.header("🔎 Section (for filters)")
+    section_for_filters = st.selectbox(
+        "",
+        ["Status", "Map", "Table", "Spectrum"],
+        index=0,
+        key="section_for_filters",
+        label_visibility="collapsed",
+    )
+
+    st.markdown("---")
     st.header("🗓️ Select Period")
     period_options = ["Olympic", "Paralympic"] if available(_df, COL_PERIOD) else []
     if period_options:
-        default_idx = 0 if "Olympic" in period_options else 0
-        period_sel = st.selectbox("", period_options, index=default_idx, key="period_sel", label_visibility="collapsed")
+        period_sel = st.selectbox("", period_options, index=0, key="period_sel", label_visibility="collapsed")
     else:
         period_sel = None
         st.info("Colonna 'License Period' non trovata. Mostro tutti i periodi.")
 
-    st.markdown("---")
+    # Build the dataframe that drives the options list
+    df_options = _df.copy()
+    if period_sel and available(df_options, COL_PERIOD):
+        df_options = df_options[df_options[COL_PERIOD] == period_sel]
 
-    # Venue FIRST
+    # If Map is the active section for filters, restrict options to JUNIPER
+    if section_for_filters == "Map" and available(df_options, COL_FINAL):
+        df_options = df_options[df_options[COL_FINAL].astype(str).str.upper() == "JUNIPER"]
+
+    st.markdown("---")
+    # Venue FIRST (options derived from df_options)
     venue_sel = None
-    if available(_df, COL_VENUE):
+    if available(df_options, COL_VENUE):
         st.header("📍 Venue")
-        df_scoped = _df.copy()
-        if period_sel and available(df_scoped, COL_PERIOD):
-            df_scoped = df_scoped[df_scoped[COL_PERIOD] == period_sel]
-        venues = sorted(df_scoped[COL_VENUE].dropna().astype(str).unique())
-        venue_sel = st.multiselect("", venues, default=venues, key="venue_sel", label_visibility="collapsed")
+        venues = sorted(df_options[COL_VENUE].dropna().astype(str).unique())
+        default_venues = venues  # preselect all
+        venue_sel = st.multiselect("", venues, default=default_venues, key="venue_sel", label_visibility="collapsed")
 
     st.markdown("---")
-
-    # Stakeholder SECOND
-    if available(_df, COL_STAKE):
+    # Stakeholder SECOND (options derived from df_options & chosen venues)
+    if available(df_options, COL_STAKE):
         st.header("👥 Stakeholder")
-        df_scoped = _df.copy()
-        if period_sel and available(df_scoped, COL_PERIOD):
-            df_scoped = df_scoped[df_scoped[COL_PERIOD] == period_sel]
-        if venue_sel and available(df_scoped, COL_VENUE):
-            df_scoped = df_scoped[df_scoped[COL_VENUE].astype(str).isin([str(x) for x in venue_sel])]
-        stakeholders = sorted(df_scoped[COL_STAKE].dropna().astype(str).unique())
+        df_stake_scope = df_options.copy()
+        if venue_sel and available(df_stake_scope, COL_VENUE):
+            df_stake_scope = df_stake_scope[df_stake_scope[COL_VENUE].astype(str).isin([str(x) for x in venue_sel])]
+        stakeholders = sorted(df_stake_scope[COL_STAKE].dropna().astype(str).unique())
         stake_sel = st.multiselect("", stakeholders, default=stakeholders, key="stake_sel", label_visibility="collapsed")
     else:
         stake_sel = None
 
 # ----------------------------
-# Apply filters
+# Apply filters to FULL dataset (global, not JUNIPER-limited)
 # ----------------------------
 filtered = _df.copy()
-
 if period_sel and available(filtered, COL_PERIOD):
     filtered = filtered[filtered[COL_PERIOD] == period_sel]
-
 if venue_sel and available(filtered, COL_VENUE):
     filtered = filtered[filtered[COL_VENUE].astype(str).isin([str(x) for x in venue_sel])]
-
 if stake_sel and available(filtered, COL_STAKE):
     filtered = filtered[filtered[COL_STAKE].astype(str).isin([str(x) for x in stake_sel])]
+
+# For the MAP view we will use a JUNIPER-only subset of `filtered`
+filtered_map = filtered.copy()
+if available(filtered_map, COL_FINAL):
+    filtered_map = filtered_map[filtered_map[COL_FINAL].astype(str).str.upper() == "JUNIPER"]
 
 # ----------------------------
 # Dashboard order: Status → Map → Table → Spectrum
 # ----------------------------
-st.subheader("Dashboard")
-
+st.subheader("LAN Assignment — Dashboard")
 tab_status, tab_map, tab_table, tab_spectrum = st.tabs(
-    ["📊 Status", "🗺️ Map", "📋 Table", "📡 Spectrum"]
+    ["📊 Status", "🗺️ Map", "📋 Tabella", "📡 Spectrum"]
 )
 
 with tab_status:
@@ -272,10 +286,17 @@ with tab_status:
             st.info("Nessun dato 'FINAL Status' (solo per NOT ASSIGNED) disponibile.")
 
 with tab_map:
-    st.info("🗺️ Mappa in preparazione...")
+    st.markdown("### Map — filtered to FINAL Status = JUNIPER")
+    if filtered_map.empty:
+        st.info("Nessun record con FINAL Status = 'JUNIPER' per i filtri selezionati.")
+    else:
+        # placeholder: quando mi dirai come disegnarla, useremo folium/pydeck etc.
+        st.success(f"Records JUNIPER: {len(filtered_map)} (Venue/Stakeholder options in sidebar reflect JUNIPER only)")
+        st.dataframe(filtered_map[[c for c in [COL_VENUE, COL_STAKE, COL_REQUEST, COL_FINAL] if available(filtered_map, c)]],
+                     use_container_width=True, hide_index=True)
 
 with tab_table:
-    st.markdown("### Dati filtrati")
+    st.markdown("### Dati filtrati (tutti gli status)")
     if filtered.empty:
         st.info("Nessuna riga corrisponde ai filtri selezionati.")
     else:
