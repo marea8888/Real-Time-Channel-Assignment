@@ -22,7 +22,7 @@ col_bx      = "Attributed Frequency TX (MHz)"
 col_ao      = "Channel Bandwidth (kHz)"
 col_aq      = "Transmission Power (W)"
 col_venue   = "Venue Code"
-col_stake   = "Stakeholder ID"
+col_stake   = "Stakeholder Business ID"
 col_request = "Request ID"
 col_period  = "License Period"
 col_service = "Service Tri Code"
@@ -410,13 +410,13 @@ def main_display():
     st.markdown("---")    
     st.subheader("🏅 Stakeholder <NOT ASSIGNED> Ranking (%)")
     # Calcoliamo il totale richieste per stakeholder
-    total_requests = filtered.groupby('Stakeholder ID').size().reset_index(name='total_count')
+    total_requests = filtered.groupby('Stakeholder Business ID').size().reset_index(name='total_count')
     
     # Conteggio KO per Stakeholder
-    ko_global_counts = ko_df.groupby('Stakeholder ID').size().reset_index(name='KO_count')
+    ko_global_counts = ko_df.groupby('Stakeholder Business ID').size().reset_index(name='KO_count')
     
     # Uniamo totale e KO
-    ko_merged = ko_global_counts.merge(total_requests, on='Stakeholder ID', how='right').fillna(0)
+    ko_merged = ko_global_counts.merge(total_requests, on='Stakeholder Business ID', how='right').fillna(0)
 
     # Filtriamo gli stakeholder con KO_count > 0
     ko_merged = ko_merged[ko_merged['KO_count'] > 0]
@@ -436,7 +436,7 @@ def main_display():
     # Facciamo il grafico a barre orizzontali
     fig_global_ko = go.Figure(go.Bar(
         x=ko_merged['KO_percent'],
-        y=ko_merged['Stakeholder ID'],
+        y=ko_merged['Stakeholder Business ID'],
         orientation='h',
         marker_color='#EF553B',
         text=ko_merged['label_text'],
