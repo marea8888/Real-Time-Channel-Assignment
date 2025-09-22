@@ -201,13 +201,13 @@ def stats_fig(df_all):
         showlegend=True
     )
 
-    # Second pie chart for TMP Status of NOT ASSIGNED
-    if not not_assigned_base.empty and 'TMP Status' in not_assigned_base.columns:
-        # Sostituire i NaN con "Not Analysed" per il TMP Status
-        not_assigned_base['TMP Status'] = not_assigned_base['TMP Status'].fillna('Not Analysed')
+    # Second pie chart for Stato of NOT ASSIGNED
+    if not not_assigned_base.empty and 'Stato' in not_assigned_base.columns:
+        # Sostituire i NaN con "Not Analysed" per il Stato
+        not_assigned_base['Stato'] = not_assigned_base['Stato'].fillna('Not Analysed')
         
-        # Calcolare la frequenza delle voci in TMP Status per le righe "NOT ASSIGNED"
-        tmp_status_counts = not_assigned_base['TMP Status'].value_counts()
+        # Calcolare la frequenza delle voci in Stato per le righe "NOT ASSIGNED"
+        tmp_status_counts = not_assigned_base['Stato'].value_counts()
         tmp_status_stats = pd.DataFrame({
             'Status': tmp_status_counts.index,
             'Count': tmp_status_counts.values
@@ -287,7 +287,7 @@ def main_display():
     else:
         st.info(f"No data for {st.session_state.period_sel}")
 
-    # Second row: Pie chart for main status on the left, TMP Status pie chart on the right
+    # Second row: Pie chart for main status on the left, Stato pie chart on the right
     st.markdown("---")
     col1, col_sep, col2 = st.columns([3, 0.02, 3])  # Larger columns for the pie charts
 
@@ -302,7 +302,7 @@ def main_display():
         if tmp_status_pie is not None:
             st.plotly_chart(tmp_status_pie, use_container_width=True)
         else:
-            st.info("No TMP Status data for the selected filters.")
+            st.info("No Stato data for the selected filters.")
     
     # Third row: Capacity plot
     st.markdown("---")
@@ -316,15 +316,15 @@ def main_display():
     st.markdown("---")
     st.subheader("Failed Assignments")
 
-    # After the charts, add the filter for TMP Status
-    tmp_status_options = ['All'] + clean['TMP Status'].dropna().unique().tolist()
+    # After the charts, add the filter for Stato
+    tmp_status_options = ['All'] + clean['Stato'].dropna().unique().tolist()
     selected_status = st.selectbox("", tmp_status_options)
 
-    # Filter KO table based on TMP Status
+    # Filter KO table based on Stato
     ko_df = filtered[filtered[col_bx].isna() & ~filtered[col_pnrf].str.strip().eq("MoD")].copy()
 
     if selected_status != 'All':
-        ko_df = ko_df[ko_df['TMP Status'] == selected_status]
+        ko_df = ko_df[ko_df['Stato'] == selected_status]
 
     # Selecting only the specified columns
     ko_df = ko_df[['Request ID', 'Service Tri Code', 'Venue Code', 'Usage Type', 'Transmission Type', 'Is Simplex',
