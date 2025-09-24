@@ -217,7 +217,7 @@ def stats_fig(df_all):
             tmp_status_stats,
             names='Status', values='Count', hole=0.6, template='plotly',
             color='Status', 
-            color_discrete_map={status: px.colors.qualitative.Set1[i % len(tmp_status_stats['Status'])] for i, status in enumerate(tmp_status_stats['Status'].unique())}
+            color_discrete_map={status: px.colors.qualitative.Set1[i % len(tmp_status_stats['Stato'])] for i, status in enumerate(tmp_status_stats['Stato'].unique())}
         )
         tmp_status_fig.update_traces(
             textinfo='percent',
